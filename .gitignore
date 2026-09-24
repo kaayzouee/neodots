@@ -1,0 +1,6 @@
+hardware-configuration.nix
+configuration.nix
+bin/
+*.decrypted
+*.plain.yaml
+secrets/*.plain.*
