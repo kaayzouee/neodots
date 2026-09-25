@@ -1,10 +1,10 @@
 <h1 style="text-align:center;"> NixOS dotfiles</h1>
 
-[![Stars](https://img.shields.io/github/stars/kaayzouee/nix-dotfiles-2?style=for-the-badge&logo=macys&label=Stars&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/nix-dotfiles-2/stargazers)
-[![Forks](https://img.shields.io/github/forks/kaayzouee/nix-dotfiles-2?style=for-the-badge&logo=git&label=Forks&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/nix-dotfiles-2/network/members)
-[![Issues](https://img.shields.io/github/issues/kaayzouee/nix-dotfiles-2?style=for-the-badge&logo=gitbook&label=Issues&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/nix-dotfiles-2/issues)
-[![License](https://img.shields.io/github/license/kaayzouee/nix-dotfiles-2?style=for-the-badge&logo=nextdns&label=License&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/nix-dotfiles-2/blob/main/LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/kaayzouee/nix-dotfiles-2?style=for-the-badge&logo=git&label=Last%20Commit&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/nix-dotfiles-2/commits)
+[![Stars](https://img.shields.io/github/stars/kaayzouee/neodots?style=for-the-badge&logo=macys&label=Stars&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/stargazers)
+[![Forks](https://img.shields.io/github/forks/kaayzouee/neodots?style=for-the-badge&logo=git&label=Forks&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/network/members)
+[![Issues](https://img.shields.io/github/issues/kaayzouee/neodots?style=for-the-badge&logo=gitbook&label=Issues&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/issues)
+[![License](https://img.shields.io/github/license/kaayzouee/neodots?style=for-the-badge&logo=nextdns&label=License&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/blob/main/LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/kaayzouee/neodots?style=for-the-badge&logo=git&label=Last%20Commit&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/commits)
 [![Made with Nix](https://img.shields.io/badge/Made%20with-Nix-2d2d2d?style=for-the-badge&logo=nixos&logoColor=66ccff&labelColor=1a1a1a)](https://nixos.org/)
 
 
