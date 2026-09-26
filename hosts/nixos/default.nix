@@ -42,6 +42,7 @@ in
     ../../modules/programs/vscode.nix
     ../../modules/programs/pcscd.nix
     ../../modules/programs/sops.nix
+    ../../modules/programs/thunar.nix
   ];
 
   networking.hostName = "nixos";

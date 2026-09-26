@@ -1,4 +1,3 @@
-
 { config, ... }:
 
 {
@@ -15,8 +14,10 @@
     ../../modules/programs/tmux.nix
     ../../modules/programs/fastfetch.nix
     ../../modules/programs/git.nix
+    ../../modules/programs/polybar.nix
+    ../../modules/system/xsession.nix
   ];
-  
+
   home.username = "kay";
   home.homeDirectory = "/home/kay";
 
@@ -25,6 +26,20 @@
   catppuccin.xfce4-terminal.enable = true;
 
   programs.home-manager.enable = true;
+
+  # XFCE session behaviour.
+  #
+  # SaveOnExit = false stops XFCE from writing a new saved session on logout.
+  #
+  # The Failsafe session is what xfce4-session launches on a *fresh* login
+  # (no saved session yet). It hardcodes Client2 = xfce4-panel, which no
+  # longer exists on this system. Every login it tries to launch it, fails,
+  # logs an error, and stalls for ~2s. We replace it with `true` (the
+  # /bin/true binary) so the slot still exists but does nothing.
+  xfconf.settings."xfce4-session" = {
+    "general/SaveOnExit" = false;
+    "sessions/Failsafe/Client2_Command" = [ "true" ];
+  };
 
   xdg.mimeApps = {
     enable = true;

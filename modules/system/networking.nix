@@ -54,6 +54,8 @@
     dns = "none";
   };
 
+  networking.interfaces."wlp98s0".useDHCP = true;
+
   networking.resolvconf.enable = false;
   services.resolved.enable = false;
 
