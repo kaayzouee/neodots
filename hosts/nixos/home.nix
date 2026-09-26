@@ -11,6 +11,7 @@
 
   imports = [
     ../../modules/theming/cursor.nix
+    ../../modules/theming/wallpaper.nix
     ../../modules/programs/tmux.nix
     ../../modules/programs/fastfetch.nix
     ../../modules/programs/git.nix

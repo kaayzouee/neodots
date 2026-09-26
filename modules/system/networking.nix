@@ -13,9 +13,11 @@
 #  networking.firewall.enable = true;
 #}
 
-
+# modules/system/networking.nix
+{ pkgs, ... }:
 
 {
+  # ─── Stubby: DNS-over-TLS resolver on localhost:53 ───────────────────────
   services.stubby = {
     enable = true;
 
@@ -49,13 +51,24 @@
     };
   };
 
+  # ─── NetworkManager ──────────────────────────────────────────────────────
   networking.networkmanager = {
     enable = true;
-    dns = "none";
+    dns = "none";              # stubby owns /etc/resolv.conf, not NM
+    wifi.powersave = false;
   };
 
-  networking.interfaces."wlp98s0".useDHCP = true;
+  # NetworkManager handles DHCP for wlp98s0 itself; do NOT declare it here,
+  # or NixOS will also spawn dhcpcd for the interface and the two will fight
+  # over the same UDP sockets (dhcp6_openudp: Address already in use).
+  #
+  # REMOVED: networking.interfaces."wlp98s0".useDHCP = true;
 
+  # ─── Disable every other DHCP client ─────────────────────────────────────
+  networking.useDHCP = false;
+  networking.dhcpcd.enable = false;
+
+  # ─── resolv.conf: hand-written, points at stubby ─────────────────────────
   networking.resolvconf.enable = false;
   services.resolved.enable = false;
 
@@ -65,8 +78,7 @@
 
   networking.firewall.enable = true;
 
-  networking.networkmanager.wifi.powersave = false;
-
+  # ─── MediaTek MT7921e Wi-Fi quirk ────────────────────────────────────────
   boot.extraModprobeConfig = ''
     options mt7921e disable_aspm=1
   '';

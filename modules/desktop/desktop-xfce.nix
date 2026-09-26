@@ -1,5 +1,4 @@
-# modules/desktop-xfce.nix
-# modules/desktop-xfce.nix
+# modules/desktop/desktop-xfce.nix
 { config, pkgs, ... }:
 
 {
@@ -15,12 +14,21 @@
   services.flatpak.enable = true;
 
   # ─── Exclude unwanted XFCE components ────────────────────────────────────
-  # Prevents xfce4-panel and friends from being installed at all, so
-  # xfce4-session never tries to restore a panel that doesn't exist
+  # xfce4-panel: replaced by Polybar.
+  # xfdesktop:   removed because it draws the wallpaper + icons synchronously
+  #              on login and is the prime suspect for the multi-second
+  #              freeze. We set the wallpaper with feh instead (see below).
+  # xfce4-notifyd: replaced by dunst.
   environment.xfce.excludePackages = with pkgs; [
     xdg-desktop-portal-xapp
     xfce4-notifyd
     xfce4-panel
+    xfdesktop
+  ];
+
+  # feh is the replacement wallpaper setter
+  environment.systemPackages = with pkgs; [
+    feh
   ];
 
   # ─── X server + Display Manager + Desktop ────────────────────────────────
@@ -31,12 +39,6 @@
 
     desktopManager.xfce = {
       enable = true;
-      # Tell the XFCE module not to install the default desktop shell.
-      # This complements excludePackages above and is the most direct way
-      # to say "I only want the WM + settings daemons, no panel/desktop."
-      # Uncomment the next line if you also want to drop xfdesktop and
-      # the default XFCE background/session stack:
-      # noDesktop = true;
     };
 
     xkb.layout = "us";
