@@ -7,8 +7,10 @@
 [![Last Commit](https://img.shields.io/github/last-commit/kaayzouee/neodots?style=for-the-badge&logo=git&label=Last%20Commit&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/commits)
 [![Made with Nix](https://img.shields.io/badge/Made%20with-Nix-2d2d2d?style=for-the-badge&logo=nixos&logoColor=66ccff&labelColor=1a1a1a)](https://nixos.org/)
 
+# Compatibility
+- **x86_64 only!**
 
-##  Updates:
+##  Updates
 - Improved KVM config significantly
 - Better wifi speed yay
 - Catppuccin theme
@@ -17,10 +19,25 @@
 - Flake
 - Home manager
 - Modules
+- Pack
 - Host
-- .gitignore for hardware + nix config file
+- `.gitignore` for hardware + nix config file
 
 ## To build
+### Requirements:
+- git
+- sudo
+- zip / unzip / libzip (if using the alternative way)
+
+### Recommended:
+- Using build script below.
+> **Why?** Because git doesn't play nice with sudo. Unless you setup your
+git account in root, I highly recommend deleting `.git` so you can actua-
+lly build the file
+
+- If not, you can setup git for your root.
+
+### Install script:
 ```bash
 git clone https://github.com/kaayzouee/nix-dotfiles-2.git /tmp/nix-dotfiles-2
 rm -rf /tmp/nix-dotfiles-2/.git
