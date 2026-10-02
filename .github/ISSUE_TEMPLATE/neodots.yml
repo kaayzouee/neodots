@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+
 name: Neodots issue
 description: Report a bug, request a feature, flag a security concern, or suggest maintenance work.
 title: "[ISSUE] "

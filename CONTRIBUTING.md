@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 kaayzouee -->
+<!-- Author: https://github.com/kaayzouee -->
+
 # Contributing to neodots
 
 Thank you for contributing to neodots. Keep changes focused, reproducible, and easy to review.
