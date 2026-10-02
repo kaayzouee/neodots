@@ -30,40 +30,71 @@
     };
   };
 
-outputs = { self, nixpkgs, catppuccin, home-manager, fcitx5-lotus, waterfox, sops-nix }:
-  let
-    system = "x86_64-linux";
-  in {
-    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      inherit system;
+  outputs =
+    {
+      self,
+      nixpkgs,
+      catppuccin,
+      home-manager,
+      fcitx5-lotus,
+      waterfox,
+      sops-nix,
+    }:
 
-      specialArgs = {
-        inherit waterfox;
-      };
+    let
+      system = "x86_64-linux";
+    in
+    {
+      nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+        inherit system;
 
-      modules = [
-        ./hosts/nixos
+        specialArgs = {
+          inherit waterfox;
+        };
 
-        catppuccin.nixosModules.catppuccin
-        home-manager.nixosModules.home-manager
-        fcitx5-lotus.nixosModules.fcitx5-lotus
-        sops-nix.nixosModules.sops
+        modules = [
+          ./hosts/nixos
 
-        {
-          home-manager.backupFileExtension = "backup";
+          catppuccin.nixosModules.catppuccin
+          home-manager.nixosModules.home-manager
+          fcitx5-lotus.nixosModules.fcitx5-lotus
+          sops-nix.nixosModules.sops
 
-          home-manager.sharedModules = [
+          {
+            home-manager.useGlobalPkgs = true;
+
+            home-manager.backupFileExtension = "backup";
+
+            home-manager.extraSpecialArgs = {
+              inherit waterfox;
+            };
+
+            home-manager.sharedModules = [
               sops-nix.homeManagerModules.sops
-          ];
-
-          home-manager.users.kay = {
-            imports = [
-              ./hosts/nixos/home.nix
-              catppuccin.homeModules.catppuccin
             ];
-          };
-        }
-      ];
+
+            # -----------------------------------------------------------------
+            # Personal user
+            # -----------------------------------------------------------------
+
+            home-manager.users.kay = {
+              imports = [
+                ./hosts/nixos/home.nix
+                catppuccin.homeModules.catppuccin
+              ];
+            };
+
+            # -----------------------------------------------------------------
+            # Disposable guest user
+            # -----------------------------------------------------------------
+
+            home-manager.users.guest = {
+              imports = [
+                ./hosts/nixos/guest-home.nix
+              ];
+            };
+          }
+        ];
+      };
     };
-  };
 }

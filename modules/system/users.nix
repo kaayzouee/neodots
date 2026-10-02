@@ -7,23 +7,48 @@
     isNormalUser = true;
     description = "kay";
     shell = pkgs.fish;
+
+    home = "/home/kay";
+    homeMode = "0700";
+
     extraGroups = [
-	"wheel"
-	"networkmanager"
-	"libvirtd" 
+      "wheel"
+      "networkmanager"
+      "libvirtd"
+      "uinput"
     ];
   };
 
   users.users.guest = {
     isNormalUser = true;
     description = "Friend Guest";
+
+    # Intentional passwordless local guest/fallback account.
     hashedPassword = "";
-    shell = "/run/current-system/sw/bin/bash";
+
+    shell = pkgs.bash;
+
     home = "/home/guest";
     createHome = true;
+    homeMode = "0700";
+
+    # Deliberately no administrative groups.
+    extraGroups = [ ];
   };
 
+  # Guest data is ephemeral.
   systemd.tmpfiles.rules = [
-    "D! /home/guest 0700 guest users" # Wipes and recreates /home/guest on boot
+    "D! /home/guest 0700 guest users -"
   ];
+
+  # ---------------------------------------------------------------------------
+  # Sudo
+  # ---------------------------------------------------------------------------
+  # Users outside wheel cannot even execute sudo.
+
+  security.sudo = {
+    enable = true;
+    execWheelOnly = true;
+    wheelNeedsPassword = true;
+  };
 }
