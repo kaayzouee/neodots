@@ -1,0 +1,186 @@
+name: Neodots issue
+description: Report a bug, request a feature, flag a security concern, or suggest maintenance work.
+title: "[ISSUE] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to neodots.
+
+        Use this form for actionable bugs, feature requests, build/CI failures, security concerns, documentation problems, and maintenance work.
+        Do not include passwords, private keys, tokens, decrypted secrets, or other sensitive data.
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      description: Select the primary category for this issue.
+      multiple: false
+      options:
+        - Bug
+        - Feature request
+        - Enhancement
+        - Security / vulnerability
+        - Dependency / package update
+        - Build / CI failure
+        - Nix evaluation / configuration
+        - Installer / deployment
+        - Compatibility / hardware
+        - Performance
+        - Documentation
+        - Refactor / maintenance
+        - Test / validation
+        - Question / support
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Select every part of the repository that is relevant.
+      multiple: true
+      options:
+        - Flake / flake.lock
+        - NixOS configuration
+        - Home Manager
+        - Modules
+        - Hosts
+        - Packages
+        - Installer
+        - Secrets / SOPS
+        - CI / GitHub Actions
+        - Security tooling
+        - Documentation
+        - Wallpaper / assets
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: For bugs and security reports, indicate the practical impact.
+      multiple: false
+      options:
+        - Informational
+        - Low
+        - Moderate
+        - High
+        - Critical
+        - Not applicable
+      default: 5
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Give the issue a concise, specific summary.
+      placeholder: "Example: NixOS build fails after updating nixpkgs"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the problem or proposed change, including relevant context.
+      placeholder: |
+        What is happening?
+        Why does it matter?
+        What should happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce or proposal details
+      description: For bugs, provide minimal reproduction steps. For features, describe the desired behavior.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs. actual behavior
+      description: Required for bugs, CI failures, and regressions; write N/A when not applicable.
+      placeholder: |
+        Expected:
+        ...
+
+        Actual:
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include only relevant non-sensitive environment details.
+      placeholder: |
+        Host:
+        Architecture:
+        NixOS version:
+        nixpkgs revision:
+        Neodots revision/commit:
+        Relevant hardware:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Paste relevant command output. Redact secrets, tokens, private paths, and other sensitive information.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security impact
+      description: For security issues, explain the affected component, impact, attack surface, and safe reproduction details. Write N/A when not applicable.
+      placeholder: |
+        Affected component:
+        Impact:
+        Attack surface:
+        Safe reproduction:
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed solution or implementation notes
+      description: Optional design ideas, constraints, alternatives, or migration considerations.
+      placeholder: "Describe a possible solution or relevant constraints."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I have removed passwords, tokens, private keys, decrypted secrets, and other sensitive data.
+          required: true
+        - label: For a security concern, I have avoided publishing unnecessary exploit details or secret material.
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        Maintainers may change the issue's labels, priority, scope, or title during triage.
