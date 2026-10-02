@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 kaayzouee -->
+<!-- Author: https://github.com/kaayzouee -->
+
 <h1 style="text-align:center;">Neodots — NixOS configuration</h1>
 
 [![Stars](https://img.shields.io/github/stars/kaayzouee/neodots?style=for-the-badge&logo=macys&label=Stars&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/stargazers)
