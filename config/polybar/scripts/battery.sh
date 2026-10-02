@@ -12,7 +12,7 @@ for dir in /sys/class/power_supply/BAT*; do
 done
 
 if [ -z "$battery_dir" ]; then
-    printf ' no battery\n'
+    printf ' 0%% ?\n'
     exit 0
 fi
 
@@ -21,36 +21,38 @@ status=$(cat "$battery_dir/status" 2>/dev/null || printf 'Unknown')
 
 case "$capacity" in
     90|9[0-9]|100)
-        icon=''
+        battery_icon=''
         ;;
     60|6[0-9]|7[0-9]|8[0-9])
-        icon=''
+        battery_icon=''
         ;;
     30|3[0-9]|4[0-9]|5[0-9])
-        icon=''
+        battery_icon=''
         ;;
     10|1[0-9]|2[0-9])
-        icon=''
+        battery_icon=''
         ;;
     *)
-        icon=''
+        battery_icon=''
         ;;
 esac
 
 case "$status" in
     Charging)
-        printf ' %s %s%% charging\n' "$icon" "$capacity"
+        status_icon=''
         ;;
     Full)
-        printf '%s %s%% full\n' "$icon" "$capacity"
-        ;;
-    "Not charging")
-        printf '%s %s%%\n' "$icon" "$capacity"
+        status_icon=''
         ;;
     Discharging)
-        printf '%s %s%%\n' "$icon" "$capacity"
+        status_icon=''
+        ;;
+    "Not charging")
+        status_icon=''
         ;;
     *)
-        printf '%s %s%% %s\n' "$icon" "$capacity" "$status"
+        status_icon='?'
         ;;
 esac
+
+printf '%s %s%% %s\n' "$battery_icon" "$capacity" "$status_icon"
