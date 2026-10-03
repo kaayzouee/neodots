@@ -108,6 +108,7 @@ in
     ../../modules/programs/pcscd.nix
     ../../modules/programs/sops.nix
     ../../modules/programs/thunar.nix
+    ../../modules/programs/fish.nix
   ];
 
   networking.hostName = "nixos";

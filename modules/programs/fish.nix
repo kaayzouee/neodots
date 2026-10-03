@@ -12,6 +12,10 @@
       set -g fish_greeting 'Hello, world! ♡'
     '';
 
+    if status is-interactive; and not set -q TMUX
+      exec tmux new-session -A -s main
+    end
+
     plugins = [
       {
         name = "bass";
