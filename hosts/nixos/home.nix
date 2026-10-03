@@ -2,7 +2,7 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ config, ... }:
+{ pkgs, config, ... }:
 
 {
   home.stateVersion = "26.05";
@@ -31,6 +31,26 @@
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
   programs.home-manager.enable = true;
+
+
+  programs.fish = {
+    enable = true;
+
+    interactiveShellInit = ''
+      set -g fish_greeting 'Hello, world! ♡'
+
+      if not set -q TMUX
+        exec tmux new-session -A -s main
+      end
+    '';
+
+    plugins = [
+      {
+        name = "bass";
+        src = pkgs.fishPlugins.bass;
+      }
+    ];
+  };
 
   # XFCE session behaviour.
   #
