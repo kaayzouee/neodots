@@ -28,7 +28,8 @@
     xfce4-notifyd
     xfce4-panel
     xfdesktop
-  ];
+    xfce4-terminal
+ ];
 
   # feh is the replacement wallpaper setter
   environment.systemPackages = with pkgs; [

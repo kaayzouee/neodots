@@ -11,9 +11,9 @@
   home.homeDirectory = "/home/guest";
 
   imports = [
-    # Gives the guest the same Polybar infrastructure,
-    # but none of your personal Home Manager modules.
     ../../modules/programs/polybar.nix
+    ../../modules/programs/alacritty.nix
+    ../../modules/programs/picom.nix
   ];
 
   # ---------------------------------------------------------------------------
@@ -21,15 +21,10 @@
   # ---------------------------------------------------------------------------
   #
   # This is intentionally small.
-  #
-  # The system still contains your normal system-wide packages, so this is
-  # NOT a hard security allowlist. It defines the software intentionally
-  # exposed through the guest's own Home Manager environment.
-  #
+
   home.packages = [
     pkgs.git
     pkgs.feh
-    pkgs.xfce4-terminal
     pkgs.xfce4-appfinder
 
     waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin

@@ -30,7 +30,7 @@
       bind C-s choose-session -Z
       
       # --- Floating scratchpad (trick 2) ---
-      bind C-p new-window -d -n scratch -p 80,60 -c "#{pane_current_path}" "bash"
+      bind C-p display-popup -E -w 80% -h 60% -d "#{pane_current_path}" "bash"
       
       # --- Mouse toggle (trick 4) ---
       bind m set -g mouse on \; display "Mouse ON"

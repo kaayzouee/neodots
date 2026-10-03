@@ -16,6 +16,8 @@
   imports = [
     ../../modules/theming/cursor.nix
     ../../modules/theming/wallpaper.nix
+    ../../modules/programs/alacritty.nix
+    ../../modules/programs/picom.nix
     ../../modules/programs/tmux.nix
     ../../modules/programs/fastfetch.nix
     ../../modules/programs/git.nix
@@ -27,8 +29,6 @@
   home.homeDirectory = "/home/kay";
 
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
-
-  catppuccin.xfce4-terminal.enable = true;
 
   programs.home-manager.enable = true;
 
@@ -44,6 +44,15 @@
   xfconf.settings."xfce4-session" = {
     "general/SaveOnExit" = false;
     "sessions/Failsafe/Client2_Command" = [ "true" ];
+  };
+
+  xfconf.settings."xfwm4" = {
+    "general/use_compositing" = false;
+  };
+
+  xfconf.settings."xfce4-keyboard-shortcuts" = {
+    "commands/custom/override" = true;
+    "commands/custom/<Primary><Shift>t" = "thunar";
   };
 
   xdg.mimeApps = {

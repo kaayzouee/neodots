@@ -5,8 +5,9 @@
 { pkgs, ... }:
 
 [
-  pkgs.fzf      # fuzzy finder
-  pkgs.jq       # JSON processor
-  pkgs.stow     # symlink manager
-
+  pkgs.alacritty # terminal emulator
+  pkgs.fzf       # fuzzy finder
+  pkgs.jq        # JSON processor
+  pkgs.stow      # symlink manager
+  pkgs.picom     # blurry background for terminal
 ]
