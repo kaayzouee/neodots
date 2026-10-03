@@ -2,7 +2,7 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ config, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   sops.defaultSopsFile = ../../secrets/secrets.yaml;
@@ -26,14 +26,21 @@
 
   programs.git = {
     enable = true;
+
     settings = {
-      credential.helper = "libsecret";
+      credential = {
+        "https://github.com" = {
+          helper = "!${lib.getExe pkgs.gh} auth git-credential";
+        };
+      };
+
       sendemail = {
         smtpserver     = "smtp.gmail.com";
         smtpserverport = 587;
         smtpencryption = "tls";
       };
     };
+
     includes = [
       { path = config.sops.templates."git-identity.conf".path; }
     ];
