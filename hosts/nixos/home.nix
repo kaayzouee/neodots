@@ -19,6 +19,7 @@
     ../../modules/programs/alacritty.nix
     ../../modules/programs/picom.nix
     ../../modules/programs/tmux.nix
+    ../../modules/programs/fish.nix
     ../../modules/programs/fastfetch.nix
     ../../modules/programs/git.nix
     ../../modules/programs/polybar.nix
