@@ -2,7 +2,7 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ pkgs, waterfox, ... }:
+{ config, pkgs, waterfox, ... }:
 
 let
   PKG_prolangs =
@@ -90,12 +90,14 @@ in
     # System
     # -------------------------------------------------------------------------
 
+    ../../modules/system/neodots.nix
     ../../modules/system/networking.nix
     ../../modules/system/boot.nix
     ../../modules/system/sound.nix
     ../../modules/system/users.nix
     ../../modules/system/virtualization.nix
     ../../modules/system/bluetooth.nix
+    ../../modules/system/persistence.nix
 
     # -------------------------------------------------------------------------
     # Programs
@@ -106,12 +108,11 @@ in
     # VS Code is configured through Home Manager instead.
 
     ../../modules/programs/pcscd.nix
-    ../../modules/programs/sops.nix
     ../../modules/programs/thunar.nix
     ../../modules/programs/fish.nix
   ];
 
-  networking.hostName = "nixos";
+  networking.hostName = config.neodots.hostname;
 
   # ---------------------------------------------------------------------------
   # Nix

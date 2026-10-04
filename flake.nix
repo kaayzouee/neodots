@@ -3,7 +3,7 @@
 # Author: https://github.com/kaayzouee
 
 {
-  description = "Kay's NixOS flake";
+  description = "Neodots NixOS configuration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -32,6 +32,11 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    impermanence = {
+      url = "github:nix-community/impermanence";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -43,14 +48,15 @@
       fcitx5-lotus,
       waterfox,
       sops-nix,
+      impermanence,
     }:
 
     let
-      system = "x86_64-linux";
+      machine = import ./hosts/nixos/machine.nix;
     in
     {
-      nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-        inherit system;
+      nixosConfigurations.${machine.neodots.hostname} = nixpkgs.lib.nixosSystem {
+        system = machine.system;
 
         specialArgs = {
           inherit waterfox;
@@ -59,45 +65,44 @@
         modules = [
           ./hosts/nixos
 
+          {
+            neodots = machine.neodots;
+          }
+
           catppuccin.nixosModules.catppuccin
           home-manager.nixosModules.home-manager
           fcitx5-lotus.nixosModules.fcitx5-lotus
           sops-nix.nixosModules.sops
+          impermanence.nixosModules.impermanence
 
-          {
-            home-manager.useGlobalPkgs = true;
+          ({ config, ... }:
+            {
+              home-manager.useGlobalPkgs = true;
 
-            home-manager.backupFileExtension = "backup";
+              home-manager.backupFileExtension = "backup";
 
-            home-manager.extraSpecialArgs = {
-              inherit waterfox;
-            };
+              home-manager.extraSpecialArgs = {
+                inherit waterfox;
+                neodots = config.neodots;
+              };
 
-            home-manager.sharedModules = [
-              sops-nix.homeManagerModules.sops
-            ];
-
-            # -----------------------------------------------------------------
-            # Personal user
-            # -----------------------------------------------------------------
-
-            home-manager.users.kay = {
-              imports = [
-                ./hosts/nixos/home.nix
-                catppuccin.homeModules.catppuccin
+              home-manager.sharedModules = [
+                sops-nix.homeManagerModules.sops
               ];
-            };
 
-            # -----------------------------------------------------------------
-            # Disposable guest user
-            # -----------------------------------------------------------------
+              home-manager.users.${config.neodots.username} = {
+                imports = [
+                  ./hosts/nixos/home.nix
+                  catppuccin.homeModules.catppuccin
+                ];
+              };
 
-            home-manager.users.guest = {
-              imports = [
-                ./hosts/nixos/guest-home.nix
-              ];
-            };
-          }
+              home-manager.users.guest = {
+                imports = [
+                  ./hosts/nixos/guest-home.nix
+                ];
+              };
+            })
         ];
       };
     };

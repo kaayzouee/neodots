@@ -8,3 +8,5 @@ bin/
 *.decrypted
 *.plain.yaml
 secrets/*.plain.*
+/result
+/result-*

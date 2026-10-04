@@ -2,7 +2,7 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ pkgs, config, ... }:
+{ config, lib, neodots, pkgs, ... }:
 
 {
   home.stateVersion = "26.05";
@@ -20,18 +20,18 @@
     ../../modules/programs/picom.nix
     ../../modules/programs/tmux.nix
     ../../modules/programs/fastfetch.nix
-    ../../modules/programs/git.nix
     ../../modules/programs/polybar.nix
     ../../modules/system/xsession.nix
-  ];
+  ] ++ lib.optional neodots.personal.enable ../../modules/personal/git.nix;
 
-  home.username = "kay";
-  home.homeDirectory = "/home/kay";
+  home.username = neodots.username;
+  home.homeDirectory = neodots.homeDirectory;
 
-  sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
+  sops.age.keyFile = lib.mkIf neodots.personal.enable (
+    "${config.home.homeDirectory}/.config/sops/age/keys.txt"
+  );
 
   programs.home-manager.enable = true;
-
 
   programs.fish = {
     enable = true;
