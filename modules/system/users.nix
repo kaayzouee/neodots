@@ -2,17 +2,17 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   programs.fish.enable = true;
 
-  users.users.kay = {
+  users.users.${config.neodots.username} = {
     isNormalUser = true;
-    description = "kay";
+    description = config.neodots.username;
     shell = pkgs.fish;
 
-    home = "/home/kay";
+    home = config.neodots.homeDirectory;
     homeMode = "0700";
 
     extraGroups = [
