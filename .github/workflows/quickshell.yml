@@ -1,0 +1,54 @@
+name: Quickshell
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: quickshell-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  qml:
+    name: Validate Quickshell QML
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.7/install
+
+      - name: Lint Quickshell configuration
+        run: |
+          nix shell nixpkgs#quickshell nixpkgs#qt6.qtdeclarative -c bash -euo pipefail <<'EOF'
+          qs_root="$(find "$(dirname "$(readlink -f "$(command -v qs)")")/.." -type d -path '*/lib/qt-6/qml/Quickshell' -print -quit)"
+          qt_root="$(find "$(dirname "$(readlink -f "$(command -v qmllint)")")/.." -type d -path '*/lib/qt-6/qml/QtQuick' -print -quit)"
+
+          test -n "$qs_root"
+          test -n "$qt_root"
+
+          mapfile -d '' qml_files < <(find config/quickshell/neodots -name '*.qml' -print0)
+          test "${#qml_files[@]}" -gt 0
+
+          qmllint \
+            -I "$(dirname "$qs_root")" \
+            -I "$(dirname "$qt_root")" \
+            "${qml_files[@]}"
+          EOF

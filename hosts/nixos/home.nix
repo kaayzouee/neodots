@@ -2,7 +2,13 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ config, lib, neodots, pkgs, ... }:
+{
+  config,
+  lib,
+  neodots,
+  pkgs,
+  ...
+}:
 
 {
   home.stateVersion = "26.05";
@@ -13,6 +19,11 @@
     accent = "mauve";
   };
 
+  # Polybar already has an explicit repo-local configuration. Disable the
+  # optional Catppuccin Polybar integration so evaluation does not force its
+  # generated theme source.
+  catppuccin.polybar.enable = false;
+
   imports = [
     ../../modules/theming/cursor.nix
     ../../modules/theming/wallpaper.nix
@@ -22,7 +33,8 @@
     ../../modules/programs/fastfetch.nix
     ../../modules/programs/polybar.nix
     ../../modules/system/xsession.nix
-  ] ++ lib.optional neodots.personal.enable ../../modules/personal/git.nix;
+  ]
+  ++ lib.optional neodots.personal.enable ../../modules/personal/git.nix;
 
   home.username = neodots.username;
   home.homeDirectory = neodots.homeDirectory;

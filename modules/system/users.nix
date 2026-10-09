@@ -23,6 +23,23 @@
     ];
   };
 
+  users.users.river = {
+    isNormalUser = true;
+    description = "River Wayland User";
+    shell = pkgs.fish;
+
+    home = "/home/river";
+    createHome = true;
+    homeMode = "0700";
+
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "libvirtd"
+      "uinput"
+    ];
+  };
+
   users.users.guest = {
     isNormalUser = true;
     description = "Friend Guest";

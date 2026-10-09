@@ -1,0 +1,3 @@
+module Neodots.Services
+singleton AppCatalog 1.0 AppCatalog.qml
+singleton SystemState 1.0 SystemState.qml

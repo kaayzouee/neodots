@@ -18,11 +18,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    fcitx5-lotus = {
-      url = "github:LotusInputMethod/fcitx5-lotus";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     waterfox = {
       url = "github:Hythera/nix-waterfox";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -45,7 +40,6 @@
       nixpkgs,
       catppuccin,
       home-manager,
-      fcitx5-lotus,
       waterfox,
       sops-nix,
       impermanence,
@@ -71,11 +65,11 @@
 
           catppuccin.nixosModules.catppuccin
           home-manager.nixosModules.home-manager
-          fcitx5-lotus.nixosModules.fcitx5-lotus
           sops-nix.nixosModules.sops
           impermanence.nixosModules.impermanence
 
-          ({ config, ... }:
+          (
+            { config, ... }:
             {
               home-manager.useGlobalPkgs = true;
 
@@ -97,13 +91,23 @@
                 ];
               };
 
+              home-manager.users.river = {
+                imports = [
+                  ./hosts/nixos/river-home.nix
+                  catppuccin.homeModules.catppuccin
+                ];
+              };
+
               home-manager.users.guest = {
                 imports = [
                   ./hosts/nixos/guest-home.nix
                 ];
               };
-            })
+            }
+          )
         ];
       };
+
+      formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
     };
 }

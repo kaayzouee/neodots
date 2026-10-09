@@ -7,7 +7,7 @@
 [![Stars](https://img.shields.io/github/stars/kaayzouee/neodots?style=for-the-badge&logo=macys&label=Stars&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/stargazers)
 [![Forks](https://img.shields.io/github/forks/kaayzouee/neodots?style=for-the-badge&logo=git&label=Forks&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/network/members)
 [![Issues](https://img.shields.io/github/issues/kaayzouee/neodots?style=for-the-badge&logo=gitbook&label=Issues&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/issues)
-[![License](https://img.shields.io/github/license/kaayzouee/neodots?style=for-the-badge&logo=nextdns&label=License&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/kaayzouee/neodots?style=for-the-badge&logo=git&label=License&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/blob/main/LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/kaayzouee/neodots?style=for-the-badge&logo=git&label=Last%20Commit&color=2d2d2d&labelColor=1a1a1a&logoColor=66ccff)](https://github.com/kaayzouee/neodots/commits)
 [![Made with Nix](https://img.shields.io/badge/Made%20with-Nix-2d2d2d?style=for-the-badge&logo=nixos&logoColor=66ccff&labelColor=1a1a1a)](https://nixos.org/)
 
@@ -67,6 +67,16 @@ rm -rf /tmp/neodots/.git
 sudo cp -a /tmp/neodots/. /etc/nixos/
 sudo nixos-rebuild switch --flake /etc/nixos#nixos
 ```
+
+### River account and session
+
+The configuration creates a separate `river` account but deliberately does not commit a default password. After switching to the configuration, set a password for that account once:
+
+```bash
+sudo passwd river
+```
+
+NixOS retains this locally set password across rebuilds. The River compositor is also registered as a display-manager session; select **river** in LightDM's session menu after rebuilding.
 
 ### Hardware configuration
 

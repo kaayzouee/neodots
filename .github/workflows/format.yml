@@ -1,0 +1,57 @@
+name: Format
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: format-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  format:
+    name: Check formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.7/install
+
+      - name: Check Nix formatting
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          if [[ -n "${BASE_REF}" ]]; then
+            git fetch --no-tags origin "${BASE_REF}" --depth=1
+            mapfile -t files < <(
+              git diff --name-only --diff-filter=ACMR "origin/${BASE_REF}" HEAD -- '*.nix' ':!hardware-configuration.nix'
+            )
+          else
+            mapfile -t files < <(
+              git ls-files -- '*.nix' ':!hardware-configuration.nix'
+            )
+          fi
+
+          if ((${#files[@]} == 0)); then
+            exit 0
+          fi
+
+          nix fmt -- --ci "${files[@]}"
