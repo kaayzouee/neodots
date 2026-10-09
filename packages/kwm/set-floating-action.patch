@@ -75,7 +75,7 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
              .spawn => |data| {
                  ctx.spawn(data.argv);
              },
-@@ -655,10 +674,15 @@
+@@ -655,10 +699,15 @@
              .toggle_floating => {
                  if (ctx.focused_window()) |window| {
                      window.toggle_floating(null);
