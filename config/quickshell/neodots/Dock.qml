@@ -15,9 +15,9 @@ PanelWindow { // qmllint disable uncreatable-type
     }
 
     property int hoveredIndex: -1
-    property int activationTagIndex: 1
+    property int activationAttempts: 0
+    property bool activationPrepared: false
     property var activationTarget: null
-    property bool activationFallbackAttempted: false
     property var dockApps: []
 
     // The requested bottom-bar size is proportional to the target monitor's
@@ -276,15 +276,14 @@ PanelWindow { // qmllint disable uncreatable-type
         }
 
         const preferred = matches.find(toplevel => toplevel.activated) || matches[0];
-        root.activationTarget = preferred;
-        root.activationFallbackAttempted = false;
-
         if (preferred.activated) {
             preferred.activate();
             return;
         }
 
-        root.activationTagIndex = 1;
+        root.activationTarget = preferred;
+        root.activationAttempts = 0;
+        root.activationPrepared = false;
 
         if (root.screen?.name) {
             Quickshell.execDetached({
@@ -304,44 +303,42 @@ PanelWindow { // qmllint disable uncreatable-type
         }
 
         if (target.activated) {
-            // KWM only restores a minimized window after it is focused, so send
-            // the restore action on the tick after the activation request.
+            // Once the target is focused, KWM restores it to the tag that was
+            // active before the temporary all-tags view was exposed.
             Quickshell.execDetached({
                 command: ["wtype", "-M", "logo", "-M", "alt", "-k", "r", "-m", "alt", "-m", "logo"]
             });
             activationTimer.stop();
             root.activationTarget = null;
-            root.activationFallbackAttempted = false;
+            root.activationAttempts = 0;
+            root.activationPrepared = false;
             return;
         }
 
-        if (root.activationTagIndex > 9) {
-            if (root.activationFallbackAttempted) {
-                activationTimer.stop();
-                root.activationTarget = null;
-                root.activationFallbackAttempted = false;
-                return;
-            }
-
-            // A minimized window is tagged outside the normal workspace set.
-            // Temporarily expose every tag so the compositor can activate it;
-            // the restore action switches back to the window's saved tag.
-            root.activationFallbackAttempted = true;
+        if (!root.activationPrepared) {
+            // Minimized KWM windows live on a private tag. Expose all tags once
+            // so the target can receive activation, while KWM remembers the
+            // user's current tag and restores it after the target is focused.
             Quickshell.execDetached({
                 command: ["riverctl", "set-focused-tags", "4294967295"]
             });
-            target.activate();
-            return;
+            root.activationPrepared = true;
         }
 
-        const mask = 2 ** (root.activationTagIndex - 1);
-
-        Quickshell.execDetached({
-            command: ["riverctl", "set-focused-tags", String(mask)]
-        });
-
-        root.activationTagIndex += 1;
+        root.activationAttempts += 1;
         target.activate();
+
+        if (root.activationAttempts >= 20) {
+            // Do not leave the user on the temporary all-tags view if an
+            // application refuses activation.
+            Quickshell.execDetached({
+                command: ["riverctl", "focus-previous-tags"]
+            });
+            activationTimer.stop();
+            root.activationTarget = null;
+            root.activationAttempts = 0;
+            root.activationPrepared = false;
+        }
     }
 
     function launchApplication(app) {
