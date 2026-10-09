@@ -68,7 +68,7 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
  pid: i32 = 0,
  app_id: ?[]const u8 = null,
  title: ?[]const u8 = null,
-@@ -267,4 +267,29 @@
+@@ -267,4 +267,33 @@
  }
  
  
@@ -87,18 +87,21 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 +
 +
 +pub fn restore_minimized(self: *Self) void {
-+    if (!self.minimized) return;
++    const restore_tag = if (self.output) |output|
++        if (output.tag == 0xffffffff) output.prev_tag else output.tag & 0x7fffffff
++    else
++        self.minimized_tag;
++    const target_tag = if (restore_tag == 0) self.minimized_tag else restore_tag;
 +
-+    const restore_tag = self.minimized_tag;
 +    self.minimized = false;
 +    self.minimized_tag = 0;
-+    self.set_tag(restore_tag);
-+    if (self.output) |output| output.set_tag(restore_tag);
++    self.set_tag(target_tag);
++    if (self.output) |output| output.set_tag(target_tag);
 +}
 +
 +
  pub fn toggle_tag(self: *Self, mask: u32) void {
-@@ -1131,4 +1158,6 @@
+@@ -1131,4 +1162,6 @@
          .minimize_requested => {
              log.debug("<{*}> minimize requested", .{ window });
 +            window.minimize();
