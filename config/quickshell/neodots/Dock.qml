@@ -161,7 +161,7 @@ PanelWindow { // qmllint disable uncreatable-type
             return entry.name;
 
         const normalized = root.normalizedIdentifier(appId);
-        if (["code", "codeoss", "visualstudiocode", "comvisualstudiocode"].includes(normalized))
+        if (["code", "codeoss", "orgcodeoss", "vscode", "visualstudiocode", "comvisualstudiocode", "commicrosoftvscode"].includes(normalized))
             return "Visual Studio Code";
 
         const lastPart = String(appId || "Application").split(/[./]/).pop();
@@ -174,7 +174,7 @@ PanelWindow { // qmllint disable uncreatable-type
             return entry.icon;
 
         const normalized = root.normalizedIdentifier(appId);
-        if (["code", "codeoss", "visualstudiocode", "comvisualstudiocode"].includes(normalized))
+        if (["code", "codeoss", "orgcodeoss", "vscode", "visualstudiocode", "comvisualstudiocode", "commicrosoftvscode"].includes(normalized))
             return "code";
 
         return "application-x-executable";
