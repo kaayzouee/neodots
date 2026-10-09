@@ -28,11 +28,15 @@ The NameThatUI reference calls out the standard close, minimize, and zoom contro
 
 ## Neodots implementation contract
 
-- Red sends KWM's existing close action to the active window.
-- Yellow moves the window to a reserved, normally invisible KWM tag while retaining its original tag, then focuses another visible window. Activating the running app from the Dock requests focus and restores the saved tag.
-- Green toggles KWM's maximize state.
-- These are window actions, not floating/tiled shortcuts. Floating remains available separately through the window manager's keyboard binding.
-- The top bar is a Quickshell surface rather than a native per-window title bar, so these controls act on the currently active toplevel.
+- Waterfox's controls live in the browser's own title/tab bar. The shell no longer draws a second set of traffic lights in the global Quickshell bar.
+- The CSS changes the appearance and placement of Waterfox's existing titlebar buttons; it does not replace their built-in commands.
+- Red keeps Waterfox's native close-window command.
+- Yellow uses Waterfox's native minimize request. KWM handles that request by moving the window to a reserved, normally invisible tag while retaining its original tag, then focuses another visible window. The Dock retains the path to reactivate and restore the minimized window.
+- Green keeps Waterfox's native maximize/restore command, which KWM already handles.
+- The buttons sit at the leading edge of the tab bar; horizontal space is reserved so tabs begin after them. Glyphs appear on hover or keyboard focus, presses give immediate feedback, and motion is disabled when reduced motion is requested.
+- Home Manager merges the managed CSS block into existing Waterfox profiles without deleting unrelated custom CSS. New profiles created after a rebuild need the activation to run again.
+- This implementation is specifically for Waterfox's Mozilla-style chrome. Other applications need their own native titlebar integration; a generic shell overlay is not a substitute for per-window controls.
+- Floating remains separate from window close, minimize, and maximize behavior.
 
 ## Sources and attribution
 
