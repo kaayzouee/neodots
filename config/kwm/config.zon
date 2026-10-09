@@ -1176,6 +1176,9 @@
         //              }
         //              the corrosponding action will only trigger once when pointer button pressed or released
         //              the pressed action and released action could define at the same time
+        // Super + left-drag moves a window (and automatically floats it
+        // if it was tiled); Super + right-drag resizes it. Keep these bindings
+        // available in the temporary floating-control mode too.
         .pointer = .{
             .{
                 .mode = "default",
@@ -1185,6 +1188,18 @@
             },
             .{
                 .mode = "default",
+                .button = .right,
+                .modifiers = .{ .mod4 = true },
+                .event = .{ .pressed = .pointer_resize },
+            },
+            .{
+                .mode = "floating",
+                .button = .left,
+                .modifiers = .{ .mod4 = true },
+                .event = .{ .pressed = .pointer_move },
+            },
+            .{
+                .mode = "floating",
                 .button = .right,
                 .modifiers = .{ .mod4 = true },
                 .event = .{ .pressed = .pointer_resize },

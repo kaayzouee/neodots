@@ -256,48 +256,72 @@ PanelWindow { // qmllint disable uncreatable-type
                     color: Qt.rgba(1, 1, 1, 0.14)
                 }
 
-                // Two macOS-inspired window controls: green restores the
-                // focused window to tiling; yellow toggles KWM floating mode.
+                // Clearly visible macOS-inspired window controls. The circles
+                // stay compact, but each has a larger hit target for reliable clicks.
                 Row {
                     id: windowControls
 
+                    readonly property real hitSize: Math.max(config.topControlHeight * 0.76, 22)
+                    readonly property real diameter: Math.max(config.topSurfaceHeight * 0.30, 13)
+
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: config.topItemSpacing * 0.8
+                    height: hitSize
+                    spacing: config.topSurfaceHeight * 0.055
+                    implicitWidth: floatingButton.width + tileButton.width + spacing
+                    implicitHeight: hitSize
 
-                    Rectangle {
-                        id: minimizeButton
+                    Item {
+                        id: floatingButton
 
-                        readonly property real diameter: config.topSurfaceHeight * 0.23
+                        width: windowControls.hitSize
+                        height: windowControls.hitSize
 
-                        width: diameter
-                        height: diameter
-                        radius: diameter / 2
-                        color: minimizeMouse.containsMouse ? "#ffd15c" : "#ffbd2e"
-                        opacity: minimizeMouse.pressed ? 0.72 : 1
+                        Rectangle {
+                            width: windowControls.diameter
+                            height: width
+                            anchors.centerIn: parent
+                            radius: width / 2
+                            color: floatingMouse.containsMouse ? "#ffd15c" : "#ffbd2e"
+                            border.width: 1
+                            border.color: floatingMouse.containsMouse
+                                ? Qt.rgba(1, 1, 1, 0.50)
+                                : Qt.rgba(0, 0, 0, 0.18)
+                            opacity: floatingMouse.pressed ? 0.72 : 1
+                        }
 
                         MouseArea {
-                            id: minimizeMouse
+                            id: floatingMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: root.triggerWindowShortcut("f", [])
                         }
                     }
 
-                    Rectangle {
-                        id: maximizeButton
+                    Item {
+                        id: tileButton
 
-                        readonly property real diameter: config.topSurfaceHeight * 0.23
+                        width: windowControls.hitSize
+                        height: windowControls.hitSize
 
-                        width: diameter
-                        height: diameter
-                        radius: diameter / 2
-                        color: maximizeMouse.containsMouse ? "#4fe16a" : "#28c840"
-                        opacity: maximizeMouse.pressed ? 0.72 : 1
+                        Rectangle {
+                            width: windowControls.diameter
+                            height: width
+                            anchors.centerIn: parent
+                            radius: width / 2
+                            color: tileMouse.containsMouse ? "#4fe16a" : "#28c840"
+                            border.width: 1
+                            border.color: tileMouse.containsMouse
+                                ? Qt.rgba(1, 1, 1, 0.50)
+                                : Qt.rgba(0, 0, 0, 0.18)
+                            opacity: tileMouse.pressed ? 0.72 : 1
+                        }
 
                         MouseArea {
-                            id: maximizeMouse
+                            id: tileMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: root.triggerWindowShortcut("t", ["alt"])
                         }
                     }
