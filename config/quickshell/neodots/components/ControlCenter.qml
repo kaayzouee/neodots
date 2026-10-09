@@ -99,59 +99,17 @@ PopupWindow {
                             }
                         }
 
-                        Canvas {
+                        Image {
                             id: wifiIcon
 
                             Layout.preferredWidth: root.blockSize * 0.23
                             Layout.preferredHeight: root.blockSize * 0.23
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                ctx.lineCap = "round";
-                                ctx.lineJoin = "round";
-                                ctx.strokeStyle = "#ffffff";
-                                ctx.fillStyle = "#ffffff";
-                                ctx.lineWidth = Math.max(1.5, width * 0.065);
-
-                                const cx = width * 0.5;
-                                const cy = height * 0.66;
-                                for (let i = 0; i < 3; i++) {
-                                    ctx.beginPath();
-                                    ctx.arc(
-                                        cx,
-                                        cy,
-                                        width * (0.43 - i * 0.13),
-                                        Math.PI * 1.22,
-                                        Math.PI * 1.78
-                                    );
-                                    ctx.stroke();
-                                }
-
-                                ctx.beginPath();
-                                ctx.arc(cx, height * 0.84, width * 0.055, 0, Math.PI * 2);
-                                ctx.fill();
-
-                                if (!SystemState.wifiEnabled || !SystemState.networkConnected) {
-                                    ctx.beginPath();
-                                    ctx.lineWidth = Math.max(2, width * 0.085);
-                                    ctx.moveTo(width * 0.20, height * 0.22);
-                                    ctx.lineTo(width * 0.80, height * 0.80);
-                                    ctx.stroke();
-                                }
-                            }
-
-                            Connections {
-                                target: SystemState
-
-                                function onWifiEnabledChanged() {
-                                    wifiIcon.requestPaint();
-                                }
-
-                                function onNetworkConnectedChanged() {
-                                    wifiIcon.requestPaint();
-                                }
-                            }
+                            source: !SystemState.wifiEnabled || !SystemState.networkConnected
+                                ? "../assets/icons/wifi-disconnected.svg"
+                                : "../assets/icons/wifi.svg"
+                            sourceSize.width: width
+                            sourceSize.height: height
+                            fillMode: Image.PreserveAspectFit
                         }
                     }
 
@@ -196,56 +154,17 @@ PopupWindow {
                             }
                         }
 
-                        Canvas {
+                        Image {
                             id: bluetoothIcon
 
                             Layout.preferredWidth: root.blockSize * 0.23
                             Layout.preferredHeight: root.blockSize * 0.23
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                ctx.lineCap = "round";
-                                ctx.lineJoin = "round";
-                                ctx.strokeStyle = "#ffffff";
-                                ctx.lineWidth = Math.max(1.7, width * 0.075);
-
-                                const cx = width * 0.5;
-                                const cy = height * 0.5;
-                                ctx.beginPath();
-                                ctx.moveTo(cx, height * 0.08);
-                                ctx.lineTo(cx, height * 0.92);
-                                ctx.moveTo(cx, cy);
-                                ctx.lineTo(width * 0.76, height * 0.27);
-                                ctx.lineTo(cx, height * 0.08);
-                                ctx.lineTo(cx, height * 0.92);
-                                ctx.lineTo(width * 0.76, height * 0.73);
-                                ctx.lineTo(cx, cy);
-                                ctx.lineTo(width * 0.24, height * 0.29);
-                                ctx.moveTo(cx, cy);
-                                ctx.lineTo(width * 0.24, height * 0.71);
-                                ctx.stroke();
-
-                                if (!SystemState.bluetoothPowered || !SystemState.bluetoothConnected) {
-                                    ctx.beginPath();
-                                    ctx.lineWidth = Math.max(2, width * 0.085);
-                                    ctx.moveTo(width * 0.18, height * 0.18);
-                                    ctx.lineTo(width * 0.82, height * 0.82);
-                                    ctx.stroke();
-                                }
-                            }
-
-                            Connections {
-                                target: SystemState
-
-                                function onBluetoothPoweredChanged() {
-                                    bluetoothIcon.requestPaint();
-                                }
-
-                                function onBluetoothConnectedChanged() {
-                                    bluetoothIcon.requestPaint();
-                                }
-                            }
+                            source: !SystemState.bluetoothPowered || !SystemState.bluetoothConnected
+                                ? "../assets/icons/bluetooth-disconnected.svg"
+                                : "../assets/icons/bluetooth.svg"
+                            sourceSize.width: width
+                            sourceSize.height: height
+                            fillMode: Image.PreserveAspectFit
                         }
                     }
 
@@ -280,53 +199,14 @@ PopupWindow {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
-                        Canvas {
+                        Image {
                             anchors.centerIn: parent
                             width: root.blockSize * 0.36
                             height: width
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                ctx.strokeStyle = Qt.rgba(1, 1, 1, 0.78);
-                                ctx.fillStyle = Qt.rgba(1, 1, 1, 0.78);
-                                ctx.lineWidth = Math.max(1.5, width * 0.045);
-                                ctx.lineJoin = "round";
-
-                                ctx.beginPath();
-                                ctx.roundRect(
-                                    width * 0.12,
-                                    height * 0.20,
-                                    width * 0.76,
-                                    height * 0.68,
-                                    width * 0.08,
-                                    height * 0.08
-                                );
-                                ctx.stroke();
-
-                                ctx.beginPath();
-                                ctx.moveTo(width * 0.12, height * 0.39);
-                                ctx.lineTo(width * 0.88, height * 0.39);
-                                ctx.moveTo(width * 0.32, height * 0.10);
-                                ctx.lineTo(width * 0.32, height * 0.29);
-                                ctx.moveTo(width * 0.68, height * 0.10);
-                                ctx.lineTo(width * 0.68, height * 0.29);
-                                ctx.stroke();
-
-                                for (let row = 0; row < 2; row++) {
-                                    for (let col = 0; col < 3; col++) {
-                                        ctx.beginPath();
-                                        ctx.arc(
-                                            width * (0.30 + col * 0.20),
-                                            height * (0.53 + row * 0.17),
-                                            width * 0.025,
-                                            0,
-                                            Math.PI * 2
-                                        );
-                                        ctx.fill();
-                                    }
-                                }
-                            }
+                            source: "../assets/icons/calendar.svg"
+                            sourceSize.width: width
+                            sourceSize.height: height
+                            fillMode: Image.PreserveAspectFit
                         }
                     }
 
