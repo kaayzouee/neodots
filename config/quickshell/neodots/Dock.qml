@@ -99,7 +99,7 @@ PanelWindow { // qmllint disable uncreatable-type
     function normalizedIdentifier(value) {
         return String(value || "")
             .toLowerCase()
-            .replace(/\\.desktop$/, "")
+            .replace(/\.desktop$/, "")
             .replace(/[^a-z0-9]/g, "");
     }
 
@@ -149,7 +149,7 @@ PanelWindow { // qmllint disable uncreatable-type
                 .filter(value => Boolean(value));
             return entryIds.some(value => {
                 const normalizedEntryId = String(value).toLowerCase()
-                    .replace(/\\.desktop$/, "");
+                    .replace(/\.desktop$/, "");
                 return normalizedAppId === normalizedEntryId
                     || normalizedAppId.endsWith("." + normalizedEntryId);
             });
@@ -166,7 +166,7 @@ PanelWindow { // qmllint disable uncreatable-type
 
         const lastPart = String(appId || "Application").split(/[./]/).pop();
         return lastPart.replace(/[-_]+/g, " ")
-            .replace(/\\b\\w/g, character => character.toUpperCase());
+            .replace(/\b\w/g, character => character.toUpperCase());
     }
 
     function fallbackIconForAppId(appId, entry) {
