@@ -17,7 +17,6 @@ PanelWindow { // qmllint disable uncreatable-type
     property int hoveredIndex: -1
     property int activationAttempts: 0
     property bool activationPrepared: false
-    property bool activationRestoringMinimized: false
     property var activationTarget: null
     property var dockApps: []
 
@@ -275,7 +274,6 @@ PanelWindow { // qmllint disable uncreatable-type
             activationTimer.stop();
             root.activationTarget = null;
             root.activationPrepared = false;
-            root.activationRestoringMinimized = false;
             launchApplication(app);
             return;
         }
@@ -288,7 +286,6 @@ PanelWindow { // qmllint disable uncreatable-type
             activationTimer.stop();
             root.activationTarget = null;
             root.activationPrepared = false;
-            root.activationRestoringMinimized = false;
             Quickshell.execDetached({
                 command: ["wtype", "-M", "logo", "-M", "alt", "-k", "m", "-m", "alt", "-m", "logo"]
             });
@@ -300,7 +297,14 @@ PanelWindow { // qmllint disable uncreatable-type
         root.activationTarget = preferred;
         root.activationAttempts = 0;
         root.activationPrepared = false;
-        root.activationRestoringMinimized = Boolean(preferred.minimized);
+
+        // KWM hides minimized windows on a private tag, which River does not
+        // reliably expose through Toplevel.minimized or activate(). Ask KWM to
+        // restore its most recently minimized window immediately instead of
+        // waiting for the hidden toplevel to report itself as activated.
+        Quickshell.execDetached({
+            command: ["wtype", "-M", "logo", "-M", "alt", "-k", "r", "-m", "alt", "-m", "logo"]
+        });
 
         if (root.screen?.name) {
             Quickshell.execDetached({
@@ -308,13 +312,9 @@ PanelWindow { // qmllint disable uncreatable-type
             });
         }
 
-        // The foreign-toplevel protocol exposes minimized state. Request that
-        // it be cleared before activation; KWM's restore action below also
-        // moves its private-tag window back onto a real workspace.
-        if (root.activationRestoringMinimized)
-            preferred.minimized = false;
-
-        // Try the normal activation path first. Only expose every tag if the
+        // Try the normal activation path after requesting KWM's restore
+        // action. This also keeps ordinary inactive apps on the existing path
+        // if there was no minimized window to restore.
         // target stays inactive; this avoids a workspace flash for visible apps.
         preferred.activate();
         activationTimer.restart();
@@ -325,24 +325,20 @@ PanelWindow { // qmllint disable uncreatable-type
 
         if (!target) {
             activationTimer.stop();
-            root.activationRestoringMinimized = false;
             return;
         }
 
         if (target.activated) {
-            // Minimized windows are restored by KWM's minimized-window search.
-            // Ordinary inactive windows keep the existing "raise to current
-            // workspace" behavior without consuming another app's minimized state.
+            // The restore chord was sent before activation was retried. Raise
+            // the now-focused window onto the active workspace; this is safe
+            // if the first restore already restored this same window.
             Quickshell.execDetached({
-                command: root.activationRestoringMinimized
-                    ? ["wtype", "-M", "logo", "-M", "alt", "-k", "r", "-m", "alt", "-m", "logo"]
-                    : ["wtype", "-M", "logo", "-M", "alt", "-k", "w", "-m", "alt", "-m", "logo"]
+                command: ["wtype", "-M", "logo", "-M", "alt", "-k", "w", "-m", "alt", "-m", "logo"]
             });
             activationTimer.stop();
             root.activationTarget = null;
             root.activationAttempts = 0;
             root.activationPrepared = false;
-            root.activationRestoringMinimized = false;
             return;
         }
 
@@ -370,7 +366,6 @@ PanelWindow { // qmllint disable uncreatable-type
             root.activationTarget = null;
             root.activationAttempts = 0;
             root.activationPrepared = false;
-            root.activationRestoringMinimized = false;
         }
     }
 
