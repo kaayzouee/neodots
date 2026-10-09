@@ -298,20 +298,28 @@ PanelWindow { // qmllint disable uncreatable-type
         root.activationAttempts = 0;
         root.activationPrepared = false;
 
-        // Keep the request tied to this selected toplevel. A global restore
-        // shortcut would pick the most recently minimized window instead of
-        // the app represented by the Dock icon, making multi-app restore order
-        // dependent and unreliable.
-
         if (root.screen?.name) {
             Quickshell.execDetached({
                 command: ["riverctl", "focus-output", root.screen.name]
             });
         }
 
-        // Try this exact window first. If it stays inactive, expose all tags
-        // temporarily and retry; once this target activates, the focused-window
-        // KWM action restores this window rather than a global recency candidate.
+        // Send the selected toplevel's exact app ID to KWM before the restore
+        // key arrives. KWM uses this request to find a minimized window for
+        // this app instead of guessing from a global minimize order.
+        const requestedAppId = String(preferred.appId || "");
+        if (requestedAppId !== "") {
+            Quickshell.execDetached({
+                command: [
+                    "sh", "-c",
+                    "mkdir -p \"$HOME/.cache/neodots\" && printf '%s' \"$1\" > \"$HOME/.cache/neodots/restore-app-id\" && wtype -M logo -M alt -k r -m alt -m logo",
+                    "neodots-dock-restore",
+                    requestedAppId
+                ]
+            });
+        }
+
+        // Continue the standard activation path for non-minimized windows.
         preferred.activate();
         activationTimer.restart();
     }
