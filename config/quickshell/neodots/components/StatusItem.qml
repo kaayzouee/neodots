@@ -9,7 +9,7 @@ Item {
     property real horizontalPadding: 9
     property real controlHeight: 30
     property real cornerRadius: 9
-    property real fontPixelSize: 15
+    property real fontPointSize: 11.25
     property int fontWeight: Font.Normal
     property bool active: false
     property bool itemEnabled: true
@@ -43,7 +43,7 @@ Item {
         anchors.centerIn: parent
         text: root.text
         color: root.textColor
-        font.pixelSize: root.fontPixelSize
+        font.pointSize: root.fontPointSize
         font.weight: root.fontWeight
     }
 

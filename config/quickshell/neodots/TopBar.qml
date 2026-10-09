@@ -254,7 +254,7 @@ PanelWindow { // qmllint disable uncreatable-type
                         anchors.centerIn: parent
                         text: root.activeAppName
                         color: "#ffffff"
-                        font.pixelSize: 17
+                        font.pointSize: config.uiFontPointSize
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -295,7 +295,7 @@ PanelWindow { // qmllint disable uncreatable-type
                             anchors.centerIn: parent
                             text: modelData.label
                             color: Qt.rgba(1, 1, 1, 0.84)
-                            font.pixelSize: 17
+                            font.pointSize: config.uiFontPointSize
                             font.weight: root.openMenuIndex === index
                                 ? Font.DemiBold
                                 : Font.Normal
@@ -345,7 +345,7 @@ PanelWindow { // qmllint disable uncreatable-type
 
                             text: root.statusItemText(modelData.id)
                             textColor: root.statusItemColor(modelData.id)
-                            fontPixelSize: config.topStatusTextSize
+                            fontPointSize: config.uiFontPointSize
                             fontWeight: modelData.id === "network"
                                 && SystemState.networkConnected
                                 ? Font.DemiBold
@@ -498,7 +498,7 @@ PanelWindow { // qmllint disable uncreatable-type
                         anchors.centerIn: parent
                         text: SystemState.dateTimeText
                         color: "#ffffff"
-                        font.pixelSize: 17
+                        font.pointSize: config.uiFontPointSize
                     }
 
                     MouseArea {

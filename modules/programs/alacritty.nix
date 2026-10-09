@@ -9,6 +9,10 @@
     package = null;
 
     settings = {
+      font = {
+        size = 11.25;
+      };
+
       window = {
         opacity = 0.88;
       };

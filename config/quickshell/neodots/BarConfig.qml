@@ -6,6 +6,9 @@ QtObject {
     readonly property real topInset: 0
     readonly property real topHorizontalInset: 0
 
+    // Keep top-bar text aligned with the terminal's configured point size.
+    readonly property real uiFontPointSize: 11.25
+
     // Top-bar geometry follows the surface size. Individual controls then
     // derive their width from their text/glyph plus proportional padding.
     readonly property real topControlHeightRatio: 0.60
@@ -15,7 +18,6 @@ QtObject {
     readonly property real topStatusItemSpacingRatio: 0.02
     readonly property real topSectionSpacingRatio: 0.10
     readonly property real topItemHorizontalPaddingRatio: 0.18
-    readonly property real topStatusTextSizeRatio: 0.30
     readonly property real topSeparatorHeightRatio: 0.40
     readonly property real topSeparatorWidthRatio: 0.02
 
@@ -30,8 +32,6 @@ QtObject {
         topSurfaceHeight * topSectionSpacingRatio
     readonly property real topItemHorizontalPadding: topSurfaceHeight
         * topItemHorizontalPaddingRatio
-    readonly property real topStatusTextSize:
-        topSurfaceHeight * topStatusTextSizeRatio
     readonly property real topSeparatorHeight: topSurfaceHeight
         * topSeparatorHeightRatio
     readonly property real topSeparatorWidth: topSurfaceHeight
