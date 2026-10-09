@@ -267,8 +267,6 @@ PanelWindow { // qmllint disable uncreatable-type
                     anchors.verticalCenter: parent.verticalCenter
                     height: hitSize
                     spacing: config.topSurfaceHeight * 0.055
-                    implicitWidth: floatingButton.width + tileButton.width + spacing
-                    implicitHeight: hitSize
 
                     Item {
                         id: floatingButton
