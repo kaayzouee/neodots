@@ -88,6 +88,7 @@ in
     required_prefs = {
         "toolkit.legacyUserProfileCustomizations.stylesheets": "true",
         "browser.tabs.drawInTitlebar": "true",
+        "widget.gtk.non-native-titlebar-buttons.enabled": "true",
     }
 
     roots = [
