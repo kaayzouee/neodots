@@ -310,8 +310,7 @@
                 },
             },
 
-            // Quickshell green traffic control: force the focused window back
-            // into KWM's tiled layout so the layout can arrange it normally.
+            // Explicit shortcut to force the focused window back to tiling.
             .{
                 .keysym = "t",
                 .modifiers = .{ .mod4 = true, .mod1 = true },
@@ -320,6 +319,36 @@
                         .pressed = .{
                             .set_floating = false,
                         },
+                    },
+                },
+            },
+            // Traffic-light yellow: hide the focused window on a private tag.
+            .{
+                .keysym = "m",
+                .modifiers = .{ .mod4 = true, .mod1 = true },
+                .event = .{
+                    .click = .{
+                        .pressed = .minimize_window,
+                    },
+                },
+            },
+            // Dock uses this after the minimized window has become focused.
+            .{
+                .keysym = "r",
+                .modifiers = .{ .mod4 = true, .mod1 = true },
+                .event = .{
+                    .click = .{
+                        .pressed = .restore_minimized_window,
+                    },
+                },
+            },
+            // Traffic-light green: toggle maximize.
+            .{
+                .keysym = "z",
+                .modifiers = .{ .mod4 = true, .mod1 = true },
+                .event = .{
+                    .click = .{
+                        .pressed = .toggle_maximize,
                     },
                 },
             },

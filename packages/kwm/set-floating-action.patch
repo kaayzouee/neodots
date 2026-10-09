@@ -1,7 +1,15 @@
 diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
 --- a/src/kwm/binding.zig
 +++ b/src/kwm/binding.zig
-@@ -119,7 +119,8 @@ pub const Action = union(enum) {
+@@ -70,6 +70,8 @@ pub const Action = union(enum) {
+     },
+     close,
++    minimize_window,
++    restore_minimized_window,
+     spawn: struct {
+         argv: []const u8,
+     },
+@@ -119,7 +121,8 @@ pub const Action = union(enum) {
      toggle_output_tag: struct { mask: u32 },
      toggle_window_tag: struct { mask: u32 },
      switch_to_previous_tag,
@@ -28,3 +36,79 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
                  if (ctx.focused_window()) |window| {
                      window.toggle_sticky();
                  }
+
+diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
+--- a/src/kwm/binding.zig
++++ b/src/kwm/binding.zig
+@@ -70,6 +70,8 @@ pub const Action = union(enum) {
+     },
+     close,
++    minimize_window,
++    restore_minimized_window,
+     spawn: struct {
+         argv: []const []const u8,
+     },
+diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
+--- a/src/kwm/seat.zig
++++ b/src/kwm/seat.zig
+@@ -504,6 +504,18 @@ fn handle_actions(self: *Self) void {
+             .close => {
+                 if (ctx.focused_window()) |window| {
+                     window.prepare_close();
+                 }
+             },
++            .minimize_window => {
++                if (ctx.focused_window()) |window| {
++                    window.minimize();
++                }
++                ctx.focus_iter(.forward, .none);
++            },
++            .restore_minimized_window => {
++                if (ctx.focused_window()) |window| {
++                    window.restore_minimized();
++                }
++            },
+             .spawn => |data| {
+                 ctx.spawn(data.argv);
+             },
+diff --git a/src/kwm/window.zig b/src/kwm/window.zig
+--- a/src/kwm/window.zig
++++ b/src/kwm/window.zig
+@@ -93,6 +93,8 @@
+ 
+     tag: u32 = 1,
++    minimized: bool = false,
++    minimized_tag: u32 = 0,
+     pid: i32 = 0,
+     app_id: ?[]const u8 = null,
+     title: ?[]const u8 = null,
+@@ -267,4 +267,24 @@
+ }
+ 
+ 
++pub fn minimize(self: *Self) void {
++    if (self.minimized) return;
++
++    self.minimized_tag = self.tag;
++    self.minimized = true;
++    self.set_tag(0x80000000);
++
++    if (self.output) |output| {
++        const visible_tag = output.tag & 0x7fffffff;
++        output.set_tag(if (visible_tag == 0) 1 else visible_tag);
++    }
++}
++
++
++pub fn restore_minimized(self: *Self) void {
++    if (!self.minimized) return;
++
++    const restore_tag = self.minimized_tag;
++    self.minimized = false;
++    self.minimized_tag = 0;
++    self.set_tag(restore_tag);
++    if (self.output) |output| output.set_tag(restore_tag);
++}
++
++
+ pub fn toggle_tag(self: *Self, mask: u32) void {

@@ -17,6 +17,7 @@ PanelWindow { // qmllint disable uncreatable-type
     property int hoveredIndex: -1
     property int activationTagIndex: 1
     property var activationTarget: null
+    property bool activationFallbackAttempted: false
     property var dockApps: []
 
     // The requested bottom-bar size is proportional to the target monitor's
@@ -276,6 +277,7 @@ PanelWindow { // qmllint disable uncreatable-type
 
         const preferred = matches.find(toplevel => toplevel.activated) || matches[0];
         root.activationTarget = preferred;
+        root.activationFallbackAttempted = false;
 
         if (preferred.activated) {
             preferred.activate();
@@ -302,20 +304,33 @@ PanelWindow { // qmllint disable uncreatable-type
         }
 
         if (target.activated) {
+            // KWM only restores a minimized window after it is focused, so send
+            // the restore action on the tick after the activation request.
+            Quickshell.execDetached({
+                command: ["wtype", "-M", "logo", "-M", "alt", "-k", "r", "-m", "alt", "-m", "logo"]
+            });
             activationTimer.stop();
             root.activationTarget = null;
+            root.activationFallbackAttempted = false;
             return;
         }
 
         if (root.activationTagIndex > 9) {
-            // Last resort: expose all tags briefly and ask the compositor to
-            // activate the existing toplevel. This is the "pop it up" fallback.
+            if (root.activationFallbackAttempted) {
+                activationTimer.stop();
+                root.activationTarget = null;
+                root.activationFallbackAttempted = false;
+                return;
+            }
+
+            // A minimized window is tagged outside the normal workspace set.
+            // Temporarily expose every tag so the compositor can activate it;
+            // the restore action switches back to the window's saved tag.
+            root.activationFallbackAttempted = true;
             Quickshell.execDetached({
                 command: ["riverctl", "set-focused-tags", "4294967295"]
             });
             target.activate();
-            activationTimer.stop();
-            root.activationTarget = null;
             return;
         }
 

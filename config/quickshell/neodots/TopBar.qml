@@ -256,20 +256,24 @@ PanelWindow { // qmllint disable uncreatable-type
                     color: Qt.rgba(1, 1, 1, 0.14)
                 }
 
-                // Clearly visible macOS-inspired window controls. The circles
-                // stay compact, but each has a larger hit target for reliable clicks.
+                // Desktop-style traffic lights: close, minimize, and maximize.
+                // The glyphs appear on group hover, while larger transparent hit
+                // regions keep the compact circles easy to click.
                 Row {
                     id: windowControls
 
-                    readonly property real hitSize: Math.max(config.topControlHeight * 0.76, 22)
-                    readonly property real diameter: Math.max(config.topSurfaceHeight * 0.30, 13)
+                    readonly property real hitSize: Math.max(config.topControlHeight * 0.92, 27)
+                    readonly property real diameter: Math.max(config.topSurfaceHeight * 0.26, 12)
+                    readonly property bool glyphsVisible: closeMouse.containsMouse
+                        || minimizeMouse.containsMouse
+                        || zoomMouse.containsMouse
 
                     anchors.verticalCenter: parent.verticalCenter
                     height: hitSize
-                    spacing: config.topSurfaceHeight * 0.055
+                    spacing: config.topSurfaceHeight * 0.025
 
                     Item {
-                        id: floatingButton
+                        id: closeButton
 
                         width: windowControls.hitSize
                         height: windowControls.hitSize
@@ -279,25 +283,37 @@ PanelWindow { // qmllint disable uncreatable-type
                             height: width
                             anchors.centerIn: parent
                             radius: width / 2
-                            color: floatingMouse.containsMouse ? "#ffd15c" : "#ffbd2e"
+                            color: closeMouse.containsMouse ? "#ff7770" : "#ff5f57"
                             border.width: 1
-                            border.color: floatingMouse.containsMouse
+                            border.color: closeMouse.containsMouse
                                 ? Qt.rgba(1, 1, 1, 0.50)
                                 : Qt.rgba(0, 0, 0, 0.18)
-                            opacity: floatingMouse.pressed ? 0.72 : 1
+                            opacity: SystemState.activeToplevel
+                                ? (closeMouse.pressed ? 0.72 : 1)
+                                : 0.48
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: windowControls.glyphsVisible
+                            text: "×"
+                            color: "#7c201d"
+                            font.pixelSize: windowControls.diameter * 0.85
+                            font.weight: Font.Bold
                         }
 
                         MouseArea {
-                            id: floatingMouse
+                            id: closeMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: !!SystemState.activeToplevel
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.triggerWindowShortcut("f", [])
+                            onClicked: root.triggerWindowShortcut("q", [])
                         }
                     }
 
                     Item {
-                        id: tileButton
+                        id: minimizeButton
 
                         width: windowControls.hitSize
                         height: windowControls.hitSize
@@ -307,20 +323,72 @@ PanelWindow { // qmllint disable uncreatable-type
                             height: width
                             anchors.centerIn: parent
                             radius: width / 2
-                            color: tileMouse.containsMouse ? "#4fe16a" : "#28c840"
+                            color: minimizeMouse.containsMouse ? "#ffd15c" : "#febc2e"
                             border.width: 1
-                            border.color: tileMouse.containsMouse
+                            border.color: minimizeMouse.containsMouse
                                 ? Qt.rgba(1, 1, 1, 0.50)
                                 : Qt.rgba(0, 0, 0, 0.18)
-                            opacity: tileMouse.pressed ? 0.72 : 1
+                            opacity: SystemState.activeToplevel
+                                ? (minimizeMouse.pressed ? 0.72 : 1)
+                                : 0.48
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: windowControls.glyphsVisible
+                            text: "−"
+                            color: "#805a00"
+                            font.pixelSize: windowControls.diameter * 0.80
+                            font.weight: Font.Bold
                         }
 
                         MouseArea {
-                            id: tileMouse
+                            id: minimizeMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: !!SystemState.activeToplevel
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.triggerWindowShortcut("t", ["alt"])
+                            onClicked: root.triggerWindowShortcut("m", ["alt"])
+                        }
+                    }
+
+                    Item {
+                        id: zoomButton
+
+                        width: windowControls.hitSize
+                        height: windowControls.hitSize
+
+                        Rectangle {
+                            width: windowControls.diameter
+                            height: width
+                            anchors.centerIn: parent
+                            radius: width / 2
+                            color: zoomMouse.containsMouse ? "#4fe16a" : "#28c840"
+                            border.width: 1
+                            border.color: zoomMouse.containsMouse
+                                ? Qt.rgba(1, 1, 1, 0.50)
+                                : Qt.rgba(0, 0, 0, 0.18)
+                            opacity: SystemState.activeToplevel
+                                ? (zoomMouse.pressed ? 0.72 : 1)
+                                : 0.48
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: windowControls.glyphsVisible
+                            text: "⤢"
+                            color: "#176329"
+                            font.pixelSize: windowControls.diameter * 0.72
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: zoomMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            enabled: !!SystemState.activeToplevel
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.triggerWindowShortcut("z", ["alt"])
                         }
                     }
                 }
