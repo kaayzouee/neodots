@@ -201,3 +201,12 @@
     transition: none !important;
   }
 }
+
+/* The GTK/Waterfox navigation toolbar can also host a native button box.
+ * Keep only the tab-strip instance; otherwise the same controls can show near
+ * the search field as well as beside the tabs. */
+#nav-bar .titlebar-buttonbox-container,
+#nav-bar .titlebar-buttonbox,
+#nav-bar .titlebar-button {
+  display: none !important;
+}
