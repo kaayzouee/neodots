@@ -332,7 +332,7 @@
                     },
                 },
             },
-            // Restore only if the target window is focused; Dock selects the target first.
+            // Dock writes the selected app ID to the restore request before sending this key.
             .{
                 .keysym = "r",
                 .modifiers = .{ .mod4 = true, .mod1 = true },
