@@ -298,13 +298,10 @@ PanelWindow { // qmllint disable uncreatable-type
         root.activationAttempts = 0;
         root.activationPrepared = false;
 
-        // KWM hides minimized windows on a private tag, which River does not
-        // reliably expose through Toplevel.minimized or activate(). Ask KWM to
-        // restore its most recently minimized window immediately instead of
-        // waiting for the hidden toplevel to report itself as activated.
-        Quickshell.execDetached({
-            command: ["wtype", "-M", "logo", "-M", "alt", "-k", "r", "-m", "alt", "-m", "logo"]
-        });
+        // Keep the request tied to this selected toplevel. A global restore
+        // shortcut would pick the most recently minimized window instead of
+        // the app represented by the Dock icon, making multi-app restore order
+        // dependent and unreliable.
 
         if (root.screen?.name) {
             Quickshell.execDetached({
@@ -312,10 +309,9 @@ PanelWindow { // qmllint disable uncreatable-type
             });
         }
 
-        // Try the normal activation path after requesting KWM's restore
-        // action. This also keeps ordinary inactive apps on the existing path
-        // if there was no minimized window to restore.
-        // target stays inactive; this avoids a workspace flash for visible apps.
+        // Try this exact window first. If it stays inactive, expose all tags
+        // temporarily and retry; once this target activates, the focused-window
+        // KWM action restores this window rather than a global recency candidate.
         preferred.activate();
         activationTimer.restart();
     }
