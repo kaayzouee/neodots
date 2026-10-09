@@ -98,3 +98,10 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 +
 +
  pub fn toggle_tag(self: *Self, mask: u32) void {
+@@ -1131,4 +1158,6 @@
+         .minimize_requested => {
+             log.debug("<{*}> minimize requested", .{ window });
++            window.minimize();
++            ctx.focus_iter(.forward, .none);
+         },
+         .parent => |data| {
