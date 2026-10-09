@@ -62,12 +62,12 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 +++ b/src/kwm/window.zig
 @@ -94,5 +94,7 @@
  
-     tag: u32 = 1,
-+    minimized: bool = false,
-+    minimized_tag: u32 = 0,
-     pid: i32 = 0,
-     app_id: ?[]const u8 = null,
-     title: ?[]const u8 = null,
+tag: u32 = 1,
++minimized: bool = false,
++minimized_tag: u32 = 0,
+pid: i32 = 0,
+app_id: ?[]const u8 = null,
+title: ?[]const u8 = null,
 @@ -267,4 +267,29 @@
  }
  
