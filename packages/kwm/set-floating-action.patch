@@ -68,7 +68,7 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
  pid: i32 = 0,
  app_id: ?[]const u8 = null,
  title: ?[]const u8 = null,
-@@ -267,4 +267,33 @@
+@@ -267,4 +267,32 @@
  }
  
  
@@ -101,7 +101,7 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 +
 +
  pub fn toggle_tag(self: *Self, mask: u32) void {
-@@ -1131,4 +1162,6 @@
+@@ -1131,4 +1161,6 @@
          .minimize_requested => {
              log.debug("<{*}> minimize requested", .{ window });
 +            window.minimize();
