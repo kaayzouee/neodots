@@ -275,12 +275,18 @@ PanelWindow { // qmllint disable uncreatable-type
             return;
         }
 
-        const preferred = matches.find(toplevel => toplevel.activated) || matches[0];
-        if (preferred.activated) {
-            preferred.activate();
+        // A second click on the active app's Dock icon minimizes its focused
+        // window, mirroring the macOS Dock toggle. Clicking again follows the
+        // inactive-window path below and brings it back.
+        const active = matches.find(toplevel => toplevel.activated);
+        if (active) {
+            Quickshell.execDetached({
+                command: ["wtype", "-M", "logo", "-M", "alt", "-k", "m", "-m", "alt", "-m", "logo"]
+            });
             return;
         }
 
+        const preferred = matches[0];
         root.activationTarget = preferred;
         root.activationAttempts = 0;
         root.activationPrepared = false;
@@ -291,6 +297,9 @@ PanelWindow { // qmllint disable uncreatable-type
             });
         }
 
+        // Try the normal activation path first. Only expose every tag if the
+        // target stays inactive; this avoids a workspace flash for visible apps.
+        preferred.activate();
         activationTimer.restart();
     }
 
@@ -303,7 +312,7 @@ PanelWindow { // qmllint disable uncreatable-type
         }
 
         if (target.activated) {
-            // Once the target is focused, KWM restores it to the tag that was
+            // KWM restores minimized windows onto the workspace that was
             // active before the temporary all-tags view was exposed.
             Quickshell.execDetached({
                 command: ["wtype", "-M", "logo", "-M", "alt", "-k", "r", "-m", "alt", "-m", "logo"]
@@ -315,25 +324,26 @@ PanelWindow { // qmllint disable uncreatable-type
             return;
         }
 
-        if (!root.activationPrepared) {
-            // Minimized KWM windows live on a private tag. Expose all tags once
-            // so the target can receive activation, while KWM remembers the
-            // user's current tag and restores it after the target is focused.
+        root.activationAttempts += 1;
+        if (!root.activationPrepared && root.activationAttempts >= 2) {
+            // Minimized windows live on KWM's private tag. Make that tag
+            // reachable, then retry activation until KWM focuses the target.
             Quickshell.execDetached({
                 command: ["riverctl", "set-focused-tags", "4294967295"]
             });
             root.activationPrepared = true;
         }
 
-        root.activationAttempts += 1;
         target.activate();
 
         if (root.activationAttempts >= 20) {
-            // Do not leave the user on the temporary all-tags view if an
-            // application refuses activation.
-            Quickshell.execDetached({
-                command: ["riverctl", "focus-previous-tags"]
-            });
+            // If the target refuses activation, restore the previous workspace
+            // rather than leave River showing the temporary all-tags view.
+            if (root.activationPrepared) {
+                Quickshell.execDetached({
+                    command: ["riverctl", "focus-previous-tags"]
+                });
+            }
             activationTimer.stop();
             root.activationTarget = null;
             root.activationAttempts = 0;
