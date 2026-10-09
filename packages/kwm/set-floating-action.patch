@@ -10,7 +10,7 @@ diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
      spawn: struct {
          argv: []const []const u8,
      },
-@@ -119,7 +121,8 @@ pub const Action = union(enum) {
+@@ -119,7 +122,8 @@ pub const Action = union(enum) {
      toggle_output_tag: struct { mask: u32 },
      toggle_window_tag: struct { mask: u32 },
      switch_to_previous_tag,
