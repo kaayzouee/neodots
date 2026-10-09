@@ -342,6 +342,17 @@
                     },
                 },
             },
+            // Dock uses a separate action for ordinary inactive windows, so
+            // restoring a minimized app never retags the wrong focused window.
+            .{
+                .keysym = "w",
+                .modifiers = .{ .mod4 = true, .mod1 = true },
+                .event = .{
+                    .click = .{
+                        .pressed = .raise_focused_window,
+                    },
+                },
+            },
             // Traffic-light green: toggle maximize.
             .{
                 .keysym = "z",
