@@ -1,46 +1,7 @@
 diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
 --- a/src/kwm/binding.zig
 +++ b/src/kwm/binding.zig
-@@ -70,6 +70,8 @@ pub const Action = union(enum) {
-     },
-     close,
-+    minimize_window,
-+    restore_minimized_window,
-     spawn: struct {
-         argv: []const u8,
-     },
-@@ -119,7 +121,8 @@ pub const Action = union(enum) {
-     toggle_output_tag: struct { mask: u32 },
-     toggle_window_tag: struct { mask: u32 },
-     switch_to_previous_tag,
-     toggle_floating,
-+    set_floating: bool,
-     toggle_sticky,
-     toggle_swallow,
-     zoom: struct { swap: bool },
-diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
---- a/src/kwm/seat.zig
-+++ b/src/kwm/seat.zig
-@@ -655,10 +655,15 @@
-             .toggle_floating => {
-                 if (ctx.focused_window()) |window| {
-                     window.toggle_floating(null);
-                 }
-             },
-+            .set_floating => |floating| {
-+                if (ctx.focused_window()) |window| {
-+                    window.toggle_floating(floating);
-+                }
-+            },
-             .toggle_sticky => {
-                 if (ctx.focused_window()) |window| {
-                     window.toggle_sticky();
-                 }
-
-diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
---- a/src/kwm/binding.zig
-+++ b/src/kwm/binding.zig
-@@ -70,6 +70,8 @@ pub const Action = union(enum) {
+@@ -72,5 +72,7 @@ pub const Action = union(enum) {
      },
      close,
 +    minimize_window,
@@ -48,10 +9,19 @@ diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
      spawn: struct {
          argv: []const []const u8,
      },
+@@ -119,7 +121,8 @@ pub const Action = union(enum) {
+     toggle_output_tag: struct { mask: u32 },
+     toggle_window_tag: struct { mask: u32 },
+     switch_to_previous_tag,
+     toggle_floating,
+     set_floating: bool,
+     toggle_sticky,
+     toggle_swallow,
+     zoom: struct { swap: bool },
 diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 --- a/src/kwm/seat.zig
 +++ b/src/kwm/seat.zig
-@@ -504,6 +504,18 @@ fn handle_actions(self: *Self) void {
+@@ -504,8 +504,19 @@ fn handle_actions(self: *Self) void {
              .close => {
                  if (ctx.focused_window()) |window| {
                      window.prepare_close();
@@ -71,10 +41,25 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
              .spawn => |data| {
                  ctx.spawn(data.argv);
              },
+@@ -655,10 +666,15 @@
+             .toggle_floating => {
+                 if (ctx.focused_window()) |window| {
+                     window.toggle_floating(null);
+                 }
+             },
++            .set_floating => |floating| {
++                if (ctx.focused_window()) |window| {
++                    window.toggle_floating(floating);
++                }
++            },
+             .toggle_sticky => {
+                 if (ctx.focused_window()) |window| {
+                     window.toggle_sticky();
+                 }
 diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 --- a/src/kwm/window.zig
 +++ b/src/kwm/window.zig
-@@ -93,6 +93,8 @@
+@@ -94,5 +94,7 @@
  
      tag: u32 = 1,
 +    minimized: bool = false,
@@ -82,7 +67,7 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
      pid: i32 = 0,
      app_id: ?[]const u8 = null,
      title: ?[]const u8 = null,
-@@ -267,4 +267,24 @@
+@@ -267,4 +267,29 @@
  }
  
  
