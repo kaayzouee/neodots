@@ -1,11 +1,12 @@
 diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
 --- a/src/kwm/binding.zig
 +++ b/src/kwm/binding.zig
-@@ -72,5 +72,7 @@ pub const Action = union(enum) {
+@@ -72,5 +72,8 @@ pub const Action = union(enum) {
      },
      close,
 +    minimize_window,
 +    restore_minimized_window,
++    raise_focused_window,
      spawn: struct {
          argv: []const []const u8,
      },
@@ -21,7 +22,7 @@ diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
 diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 --- a/src/kwm/seat.zig
 +++ b/src/kwm/seat.zig
-@@ -504,8 +504,19 @@ fn handle_actions(self: *Self) void {
+@@ -504,8 +504,40 @@ fn handle_actions(self: *Self) void {
              .close => {
                  if (ctx.focused_window()) |window| {
                      window.prepare_close();
@@ -34,6 +35,27 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 +                ctx.focus_iter(.forward, .none);
 +            },
 +            .restore_minimized_window => {
++                var target: ?*Window = null;
++                if (ctx.focused_window()) |focused| {
++                    if (focused.minimized) target = focused;
++                }
++                var latest_order: u64 = 0;
++                if (target == null) {
++                    var it = ctx.windows.safeIterator(.forward);
++                    while (it.next()) |window| {
++                        if (!window.minimized) continue;
++                        if (target == null or window.minimized_order > latest_order) {
++                            target = window;
++                            latest_order = window.minimized_order;
++                        }
++                    }
++                }
++                if (target) |window| {
++                    window.restore_minimized();
++                    ctx.focus(window, true);
++                }
++            },
++            .raise_focused_window => {
 +                if (ctx.focused_window()) |window| {
 +                    window.restore_minimized();
 +                }
@@ -41,7 +63,7 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
              .spawn => |data| {
                  ctx.spawn(data.argv);
              },
-@@ -655,10 +666,15 @@
+@@ -655,10 +688,15 @@
              .toggle_floating => {
                  if (ctx.focused_window()) |window| {
                      window.toggle_floating(null);
@@ -60,21 +82,27 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 --- a/src/kwm/window.zig
 +++ b/src/kwm/window.zig
-@@ -94,5 +94,7 @@
+@@ -63,1 +63,2 @@
+ const ctx = Context.get();
++var minimized_order_counter: u64 = 0;
+@@ -94,5 +95,8 @@
  
  tag: u32 = 1,
 +minimized: bool = false,
 +minimized_tag: u32 = 0,
++minimized_order: u64 = 0,
  pid: i32 = 0,
  app_id: ?[]const u8 = null,
  title: ?[]const u8 = null,
-@@ -267,4 +267,32 @@
+@@ -267,4 +271,35 @@
  }
  
  
 +pub fn minimize(self: *Self) void {
 +    if (self.minimized) return;
 +
++    minimized_order_counter += 1;
++    self.minimized_order = minimized_order_counter;
 +    self.minimized_tag = self.tag;
 +    self.minimized = true;
 +    self.set_tag(0x80000000);
@@ -95,13 +123,14 @@ diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 +
 +    self.minimized = false;
 +    self.minimized_tag = 0;
++    self.minimized_order = 0;
 +    self.set_tag(target_tag);
 +    if (self.output) |output| output.set_tag(target_tag);
 +}
 +
 +
  pub fn toggle_tag(self: *Self, mask: u32) void {
-@@ -1131,4 +1161,6 @@
+@@ -1131,5 +1166,7 @@
          .minimize_requested => {
              log.debug("<{*}> minimize requested", .{ window });
 +            window.minimize();
