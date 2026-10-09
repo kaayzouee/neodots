@@ -83,8 +83,7 @@ PanelWindow { // qmllint disable uncreatable-type
                 ? "Muted"
                 : SystemState.volumeText;
         case "battery":
-            return (SystemState.batteryCharging ? "⚡ " : "")
-                + Math.round(SystemState.batteryPercent) + "%";
+            return Math.round(SystemState.batteryPercent) + "%";
         default:
             return "";
         }
@@ -345,6 +344,9 @@ PanelWindow { // qmllint disable uncreatable-type
 
                             text: root.statusItemText(modelData.id)
                             textColor: root.statusItemColor(modelData.id)
+                            batteryMode: modelData.id === "battery"
+                            batteryPercent: SystemState.batteryPercent
+                            batteryCharging: SystemState.batteryCharging
                             fontPointSize: config.uiFontPointSize
                             fontWeight: modelData.id === "network"
                                 && SystemState.networkConnected
