@@ -299,10 +299,10 @@ Singleton {
             onStreamFinished: {
                 const lines = bluetoothDevicesCollector.text
                     .trim()
-                    .split("\\n")
-                    .filter(line => /^Device\\s+/i.test(line));
+                    .split("\n")
+                    .filter(line => /^Device\s+/i.test(line));
                 root.bluetoothConnectedDevice = lines.length > 0
-                    ? lines[0].replace(/^Device\\s+\\S+\\s*/i, "").trim()
+                    ? lines[0].replace(/^Device\s+\S+\s*/i, "").trim()
                         || "Connected device"
                     : "";
             }
