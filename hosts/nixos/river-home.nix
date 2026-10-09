@@ -76,7 +76,6 @@ in
     ${pkgs.python3}/bin/python3 - <<'PY'
     import configparser
     import os
-    import re
     from pathlib import Path
 
     home = Path(os.environ["HOME"])
@@ -124,33 +123,29 @@ in
             chrome_dir.mkdir(parents=True, exist_ok=True)
             css_path = chrome_dir / "userChrome.css"
             existing_css = css_path.read_text() if css_path.is_file() else ""
-            existing_css = re.sub(
-                re.escape(begin) + r".*?" + re.escape(end),
-                "",
-                existing_css,
-                flags=re.DOTALL,
-            ).rstrip()
-            managed_block = (
-                begin + "\\n" + managed_css.read_text().rstrip() + "\\n" + end
-            )
-            merged_css = (existing_css + "\\n\\n" if existing_css else "")
-            css_path.write_text(merged_css + managed_block + "\\n")
-
+            while begin in existing_css and end in existing_css:
+                before, remainder = existing_css.split(begin, 1)
+                _, after = remainder.split(end, 1)
+                existing_css = before + after
+            existing_css = existing_css.rstrip()
+            managed_block = begin + "\n" + managed_css.read_text().rstrip() + "\n" + end
+            merged_css = (existing_css + "\n\n" if existing_css else "")
+            css_path.write_text(merged_css + managed_block + "\n")
             user_js = profile / "user.js"
             prefs_text = user_js.read_text() if user_js.is_file() else ""
+            prefs_lines = prefs_text.splitlines()
             for name, value in required_prefs.items():
-                pattern = re.compile(
-                    r"^\\s*user_pref\\(\\s*[\\\"']"
-                    + re.escape(name)
-                    + r"[\\\"']\\s*,.*?\\);\\s*$",
-                    re.MULTILINE,
-                )
-                replacement = 'user_pref("' + name + '", ' + value + ');'
-                if pattern.search(prefs_text):
-                    prefs_text = pattern.sub(replacement, prefs_text)
-                else:
-                    prefs_text = prefs_text.rstrip() + "\\n" + replacement + "\\n"
-            user_js.write_text(prefs_text)
+                prefix_double = 'user_pref("' + name + '"'
+                prefix_single = "user_pref('" + name + "'"
+                prefs_lines = [
+                    line for line in prefs_lines
+                    if not (
+                        line.strip().startswith(prefix_double)
+                        or line.strip().startswith(prefix_single)
+                    )
+                ]
+                prefs_lines.append('user_pref("' + name + '", ' + value + ');')
+            user_js.write_text("\n".join(prefs_lines) + "\n")
             installed += 1
 
     print("Neodots Waterfox chrome installed in " + str(installed) + " profile(s).")
