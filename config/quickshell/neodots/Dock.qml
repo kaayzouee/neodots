@@ -17,6 +17,7 @@ PanelWindow { // qmllint disable uncreatable-type
     property int hoveredIndex: -1
     property int activationTagIndex: 1
     property var activationTarget: null
+    property var dockApps: []
 
     // The requested bottom-bar size is proportional to the target monitor's
     // height, not its width. For example: 1800 / 14.75 = 122.03 px.
@@ -53,6 +54,17 @@ PanelWindow { // qmllint disable uncreatable-type
         onTriggered: root.tryNextActivationTag()
     }
 
+    // App IDs can arrive just after a toplevel is inserted. Reconcile
+    // periodically as a fallback, without rebuilding delegates when nothing
+    // has changed.
+    Timer {
+        interval: 1000
+        repeat: true
+        running: true
+
+        onTriggered: root.refreshDockApps()
+    }
+
     anchors {
         bottom: true
         left: true
@@ -69,6 +81,162 @@ PanelWindow { // qmllint disable uncreatable-type
 
     WlrLayershell.namespace: "neodots:dock"
     WlrLayershell.layer: WlrLayer.Top
+
+    Component.onCompleted: root.refreshDockApps()
+
+    Connections {
+        target: ToplevelManager.toplevels
+
+        function onObjectInsertedPost() {
+            root.refreshDockApps();
+        }
+
+        function onObjectRemovedPost() {
+            root.refreshDockApps();
+        }
+    }
+
+    function normalizedIdentifier(value) {
+        return String(value || "")
+            .toLowerCase()
+            .replace(/\\.desktop$/, "")
+            .replace(/[^a-z0-9]/g, "");
+    }
+
+    function desktopEntryForAppId(appId) {
+        const target = root.normalizedIdentifier(appId);
+        const entries = DesktopEntries.applications.values;
+
+        let entry = entries.find(candidate =>
+            root.normalizedIdentifier(candidate.startupClass) === target
+        );
+        if (entry)
+            return entry;
+
+        entry = entries.find(candidate =>
+            root.normalizedIdentifier(candidate.id) === target
+        );
+        if (entry)
+            return entry;
+
+        // Some applications publish a reverse-DNS app ID while their desktop
+        // entry uses a short startup class (for example, Code / VS Code).
+        entry = entries.find(candidate => {
+            const startupClass = root.normalizedIdentifier(candidate.startupClass);
+            return startupClass.length >= 4 && target.endsWith(startupClass);
+        });
+        if (entry)
+            return entry;
+
+        return DesktopEntries.heuristicLookup(appId) || null;
+    }
+
+    function isCatalogAppId(appId) {
+        const normalizedAppId = String(appId || "").toLowerCase();
+
+        return AppCatalog.apps.some(app => {
+            if (app.role === "Launchpad")
+                return false;
+
+            const matchers = app.matches || [];
+            if (matchers.some(matcher =>
+                normalizedAppId.includes(String(matcher).toLowerCase())
+            )) {
+                return true;
+            }
+
+            const entryIds = [app.entry?.id, app.entry?.startupClass]
+                .filter(value => Boolean(value));
+            return entryIds.some(value => {
+                const normalizedEntryId = String(value).toLowerCase()
+                    .replace(/\\.desktop$/, "");
+                return normalizedAppId === normalizedEntryId
+                    || normalizedAppId.endsWith("." + normalizedEntryId);
+            });
+        });
+    }
+
+    function displayNameForAppId(appId, entry) {
+        if (entry?.name)
+            return entry.name;
+
+        const normalized = root.normalizedIdentifier(appId);
+        if (["code", "codeoss", "visualstudiocode", "comvisualstudiocode"].includes(normalized))
+            return "Visual Studio Code";
+
+        const lastPart = String(appId || "Application").split(/[./]/).pop();
+        return lastPart.replace(/[-_]+/g, " ")
+            .replace(/\\b\\w/g, character => character.toUpperCase());
+    }
+
+    function fallbackIconForAppId(appId, entry) {
+        if (entry?.icon)
+            return entry.icon;
+
+        const normalized = root.normalizedIdentifier(appId);
+        if (["code", "codeoss", "visualstudiocode", "comvisualstudiocode"].includes(normalized))
+            return "code";
+
+        return "application-x-executable";
+    }
+
+    function dockAppKey(app) {
+        if (app.dynamic)
+            return "running:" + root.normalizedIdentifier(app.matches?.[0] || app.role);
+
+        return "catalog:" + app.role;
+    }
+
+    function refreshDockApps() {
+        const catalogApps = AppCatalog.apps.filter(app => app.role !== "Launchpad");
+        const launchpadApps = AppCatalog.apps.filter(app => app.role === "Launchpad");
+        const dynamicApps = [];
+        const seen = {};
+
+        for (const app of catalogApps) {
+            const key = root.normalizedIdentifier(
+                app.entry?.startupClass || app.entry?.id || app.matches?.[0] || app.role
+            );
+            if (key)
+                seen[key] = true;
+        }
+
+        for (const toplevel of ToplevelManager.toplevels.values) {
+            const appId = String(toplevel.appId || "").trim();
+            if (!appId || root.isCatalogAppId(appId))
+                continue;
+
+            const entry = root.desktopEntryForAppId(appId);
+            const key = root.normalizedIdentifier(
+                entry?.startupClass || entry?.id || appId
+            );
+            if (!key || seen[key])
+                continue;
+
+            seen[key] = true;
+            dynamicApps.push({
+                role: root.displayNameForAppId(appId, entry),
+                name: root.displayNameForAppId(appId, entry),
+                entry: entry,
+                iconSource: "",
+                fallbackIcon: root.fallbackIconForAppId(appId, entry),
+                fallbackCommand: entry?.command || [appId],
+                matches: [appId],
+                dynamic: true
+            });
+        }
+
+        const nextApps = catalogApps.concat(dynamicApps, launchpadApps);
+        const currentApps = root.dockApps || [];
+        if (currentApps.length === nextApps.length
+            && currentApps.every((app, index) =>
+                root.dockAppKey(app) === root.dockAppKey(nextApps[index])
+            )) {
+            return;
+        }
+
+        root.dockApps = nextApps;
+    }
 
     function matchingToplevels(app) {
         const matchers = app.matches || [];
@@ -197,13 +365,14 @@ PanelWindow { // qmllint disable uncreatable-type
             spacing: root.dockSpacing
 
             Repeater {
-                model: AppCatalog.apps
+                model: root.dockApps
 
                 delegate: DockIcon {
                     required property var modelData
+                    required property int index
 
                     app: modelData
-                    dockIndex: AppCatalog.apps.indexOf(modelData)
+                    dockIndex: index
                     hoveredIndex: root.hoveredIndex
                     dockRoot: root
                     dockConfig: config
