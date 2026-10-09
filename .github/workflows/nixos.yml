@@ -1,0 +1,62 @@
+name: NixOS
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: nixos-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  nixos-build:
+    name: Build NixOS configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.7/install
+
+      - name: Provide CI hardware configuration
+        run: |
+          cat > hardware-configuration.nix <<'EOF'
+          { modulesPath, ... }:
+          {
+            imports = [
+              (modulesPath + "/profiles/qemu-guest.nix")
+            ];
+
+            boot.initrd.availableKernelModules = [
+              "virtio_pci"
+              "virtio_scsi"
+              "ahci"
+              "sd_mod"
+            ];
+
+            fileSystems."/" = {
+              device = "/dev/vda";
+              fsType = "ext4";
+            };
+          }
+          EOF
+
+      - name: Build NixOS system
+        run: nix build .#nixosConfigurations.nixos.config.system.build.toplevel --print-build-logs

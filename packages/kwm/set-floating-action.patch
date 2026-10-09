@@ -1,0 +1,30 @@
+diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
+--- a/src/kwm/binding.zig
++++ b/src/kwm/binding.zig
+@@ -119,7 +119,8 @@ pub const Action = union(enum) {
+     toggle_output_tag: struct { mask: u32 },
+     toggle_window_tag: struct { mask: u32 },
+     switch_to_previous_tag,
+     toggle_floating,
++    set_floating: bool,
+     toggle_sticky,
+     toggle_swallow,
+     zoom: struct { swap: bool },
+diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
+--- a/src/kwm/seat.zig
++++ b/src/kwm/seat.zig
+@@ -655,10 +655,15 @@
+             .toggle_floating => {
+                 if (ctx.focused_window()) |window| {
+                     window.toggle_floating(null);
+                 }
+             },
++            .set_floating => |floating| {
++                if (ctx.focused_window()) |window| {
++                    window.toggle_floating(floating);
++                }
++            },
+             .toggle_sticky => {
+                 if (ctx.focused_window()) |window| {
+                     window.toggle_sticky();
+                 }
