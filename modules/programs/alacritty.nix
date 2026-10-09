@@ -21,27 +21,25 @@
         {
           key = "T";
           mods = "Super";
-          chars = "\\u0002c";
+          chars = "\\\\u0002c";
         }
 
         {
           key = "Q";
           mods = "Super";
-          chars = "\\u0002p";
+          chars = "\\\\u0002p";
         }
-
 
         {
           key = "E";
           mods = "Super";
-          chars = "\\u0002n";
+          chars = "\\\\u0002n";
         }
-
 
         {
           key = "D";
           mods = "Super";
-          chars = "\\u0002&";
+          chars = "\\\\u0002&";
         }
       ];
     };
