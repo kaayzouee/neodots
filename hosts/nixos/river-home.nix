@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   neodotsQuickshellWatch = pkgs.writeShellScript "neodots-quickshell-watch" ''
@@ -65,6 +65,97 @@ in
     source = ../../config/quickshell/neodots;
     recursive = true;
   };
+
+  # Waterfox's own chrome hosts the traffic lights. Home Manager keeps the
+  # stylesheet in the repo-managed config tree; activation merges it into each
+  # existing Waterfox profile without replacing any personal userChrome rules.
+  home.file.".config/neodots/waterfox/userChrome.css".source =
+    ../../config/waterfox/userChrome.css;
+
+  home.activation.neodotsWaterfoxChrome = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ${pkgs.python3}/bin/python3 - <<'PY'
+    import configparser
+    import os
+    import re
+    from pathlib import Path
+
+    home = Path(os.environ["HOME"])
+    managed_css = home / ".config/neodots/waterfox/userChrome.css"
+    if not managed_css.is_file():
+        raise SystemExit(0)
+
+    begin = "/* BEGIN NEODOTS WATERFOX TRAFFIC LIGHTS */"
+    end = "/* END NEODOTS WATERFOX TRAFFIC LIGHTS */"
+    required_prefs = {
+        "toolkit.legacyUserProfileCustomizations.stylesheets": "true",
+        "browser.tabs.drawInTitlebar": "true",
+    }
+
+    roots = [
+        home / ".waterfox",
+        home / ".var/app/net.waterfox.waterfox/.waterfox",
+    ]
+    installed = 0
+
+    for root in roots:
+        profiles_ini = root / "profiles.ini"
+        if not profiles_ini.is_file():
+            continue
+
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.read(profiles_ini)
+
+        profiles = []
+        for section in parser.sections():
+            if not section.startswith("Profile"):
+                continue
+            profile_path = parser.get(section, "Path", fallback="")
+            if not profile_path:
+                continue
+            if parser.getboolean(section, "IsRelative", fallback=True):
+                profile = root / profile_path
+            else:
+                profile = Path(profile_path).expanduser()
+            if profile.is_dir() and profile not in profiles:
+                profiles.append(profile)
+
+        for profile in profiles:
+            chrome_dir = profile / "chrome"
+            chrome_dir.mkdir(parents=True, exist_ok=True)
+            css_path = chrome_dir / "userChrome.css"
+            existing_css = css_path.read_text() if css_path.is_file() else ""
+            existing_css = re.sub(
+                re.escape(begin) + r".*?" + re.escape(end),
+                "",
+                existing_css,
+                flags=re.DOTALL,
+            ).rstrip()
+            managed_block = (
+                begin + "\\n" + managed_css.read_text().rstrip() + "\\n" + end
+            )
+            merged_css = (existing_css + "\\n\\n" if existing_css else "")
+            css_path.write_text(merged_css + managed_block + "\\n")
+
+            user_js = profile / "user.js"
+            prefs_text = user_js.read_text() if user_js.is_file() else ""
+            for name, value in required_prefs.items():
+                pattern = re.compile(
+                    r"^\\s*user_pref\\(\\s*[\\\"']"
+                    + re.escape(name)
+                    + r"[\\\"']\\s*,.*?\\);\\s*$",
+                    re.MULTILINE,
+                )
+                replacement = 'user_pref("' + name + '", ' + value + ');'
+                if pattern.search(prefs_text):
+                    prefs_text = pattern.sub(replacement, prefs_text)
+                else:
+                    prefs_text = prefs_text.rstrip() + "\\n" + replacement + "\\n"
+            user_js.write_text(prefs_text)
+            installed += 1
+
+    print("Neodots Waterfox chrome installed in " + str(installed) + " profile(s).")
+    PY
+  '';
 
   # Keep Quickshell under user-systemd supervision so it can restart without
   # affecting KWM or River when the shell process exits.
