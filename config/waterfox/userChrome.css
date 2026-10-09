@@ -1,0 +1,177 @@
+/* Neodots Waterfox app-level traffic lights.
+ * Keep Firefox/Waterfox's own command-bound titlebar buttons: CSS changes only
+ * their appearance and placement, so close/minimize/maximize stay native actions.
+ */
+
+#titlebar,
+#TabsToolbar {
+  position: relative !important;
+}
+
+/* Reserve left-side space for the traffic lights and put tabs after them. */
+#TabsToolbar {
+  padding-inline-start: 64px !important;
+}
+
+#titlebar-buttonbox-container {
+  position: absolute !important;
+  inset-inline-start: 9px !important;
+  inset-block-start: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 20 !important;
+}
+
+#titlebar-buttonbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.titlebar-button {
+  -moz-appearance: none !important;
+  appearance: none !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 20px !important;
+  width: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  color: transparent !important;
+}
+
+.titlebar-button > .toolbarbutton-icon {
+  display: none !important;
+}
+
+.titlebar-button::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 1px solid rgb(0 0 0 / 16%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 90ms ease-out, filter 90ms ease-out;
+}
+
+.titlebar-close {
+  order: 1 !important;
+}
+
+.titlebar-close::before {
+  background: #ff5f57 !important;
+}
+
+.titlebar-min {
+  order: 2 !important;
+}
+
+.titlebar-min::before {
+  background: #febc2e !important;
+}
+
+.titlebar-max,
+.titlebar-restore,
+:root[sizemode="maximized"] .titlebar-max {
+  order: 3 !important;
+}
+
+.titlebar-max::before,
+.titlebar-restore::before {
+  background: #28c840 !important;
+}
+
+.titlebar-button::after {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  color: #3b3025;
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  transition: opacity 70ms linear;
+}
+
+.titlebar-close::after {
+  content: "×";
+  color: #7c201d;
+  font-size: 12px;
+}
+
+.titlebar-min::after {
+  content: "−";
+  color: #805a00;
+  font-size: 12px;
+}
+
+.titlebar-max::after,
+.titlebar-restore::after {
+  content: "⤢";
+  color: #176329;
+  font-size: 10px;
+}
+
+.titlebar-button:hover::before,
+.titlebar-button:focus-visible::before {
+  transform: translate(-50%, -50%) scale(1.06);
+  filter: brightness(1.06);
+}
+
+.titlebar-button:hover::after,
+.titlebar-button:focus-visible::after {
+  opacity: 1;
+}
+
+.titlebar-button:active::before {
+  transform: translate(-50%, -50%) scale(0.92);
+  filter: brightness(0.92);
+  transition-duration: 55ms;
+}
+
+.titlebar-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, currentColor 72%, transparent) !important;
+  outline-offset: 2px !important;
+}
+
+/* Do not show competing GTK-style hover fills behind our circles. */
+.titlebar-button:hover,
+.titlebar-button:active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titlebar-button::before,
+  .titlebar-button::after {
+    transition: none !important;
+  }
+}
