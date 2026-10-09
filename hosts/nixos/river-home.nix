@@ -69,8 +69,7 @@ in
   # Waterfox's own chrome hosts the traffic lights. Home Manager keeps the
   # stylesheet in the repo-managed config tree; activation merges it into each
   # existing Waterfox profile without replacing any personal userChrome rules.
-  home.file.".config/neodots/waterfox/userChrome.css".source =
-    ../../config/waterfox/userChrome.css;
+  home.file.".config/neodots/waterfox/userChrome.css".source = ../../config/waterfox/userChrome.css;
 
   home.activation.neodotsWaterfoxChrome = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ${pkgs.python3}/bin/python3 - <<'PY'
