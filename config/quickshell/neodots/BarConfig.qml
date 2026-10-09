@@ -2,7 +2,7 @@ import QtQuick
 
 QtObject {
     // macOS-like menu bar: the panel itself spans the complete output.
-    readonly property real topSurfaceHeight: 50
+    readonly property real topSurfaceHeight: 46
     readonly property real topInset: 0
     readonly property real topHorizontalInset: 0
 

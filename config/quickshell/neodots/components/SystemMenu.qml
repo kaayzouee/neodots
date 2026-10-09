@@ -9,12 +9,12 @@ PopupWindow {
     required property Item anchorItem
 
     // Keep menu rhythm tied to typography, not absolute row/padding pixels.
-    readonly property int fontPixelSize: 13
-    readonly property real lineHeightRatio: 1.15
+    readonly property int fontPixelSize: 14
+    readonly property real lineHeightRatio: 1.4
     readonly property real itemHorizontalPaddingRatio: 0.95
     readonly property real surfaceHorizontalPaddingRatio: 1.0
     readonly property real surfaceVerticalPaddingRatio: 0.85
-    readonly property real separatorHeightRatio: 0.78
+    readonly property real separatorHeightRatio: 0.9
     readonly property real separatorThicknessRatio: 0.07
     readonly property real itemCornerRadiusRatio: 0.72
     readonly property real popupAnchorGapRatio: 0.65

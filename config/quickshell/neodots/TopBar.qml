@@ -254,7 +254,7 @@ PanelWindow { // qmllint disable uncreatable-type
                         anchors.centerIn: parent
                         text: root.activeAppName
                         color: "#ffffff"
-                        font.pixelSize: 19
+                        font.pixelSize: 17
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -295,7 +295,7 @@ PanelWindow { // qmllint disable uncreatable-type
                             anchors.centerIn: parent
                             text: modelData.label
                             color: Qt.rgba(1, 1, 1, 0.84)
-                            font.pixelSize: 19
+                            font.pixelSize: 17
                             font.weight: root.openMenuIndex === index
                                 ? Font.DemiBold
                                 : Font.Normal
@@ -407,7 +407,7 @@ PanelWindow { // qmllint disable uncreatable-type
                         + config.topItemHorizontalPadding * 2
                     height: config.topControlHeight
                     anchors.verticalCenter: parent.verticalCenter
-                    radius: config.topControlHeight * 0.30
+                    radius: config.topControlHeight * 0.28
                     color: controlMouse.containsMouse || root.controlCenterOpen
                         ? Qt.rgba(1, 1, 1, 0.10)
                         : "transparent"
@@ -498,7 +498,7 @@ PanelWindow { // qmllint disable uncreatable-type
                         anchors.centerIn: parent
                         text: SystemState.dateTimeText
                         color: "#ffffff"
-                        font.pixelSize: 19
+                        font.pixelSize: 17
                     }
 
                     MouseArea {
