@@ -10,23 +10,36 @@
 
 /* Reserve left-side space for the traffic lights and put tabs after them. */
 #TabsToolbar {
-  padding-inline-start: 92px !important;
+  padding-inline-start: 0 !important;
+  direction: ltr !important;
+  display: flex !important;
 }
 
-#titlebar-buttonbox-container {
-  position: absolute !important;
-  inset-inline-start: 9px !important;
-  inset-block-start: 0 !important;
+.titlebar-buttonbox-container {
+  order: -1 !important;
+  position: relative !important;
+  inset: auto !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  height: 100% !important;
-  margin: 0 !important;
+  align-self: stretch !important;
+  flex: 0 0 auto !important;
+  margin: 0 8px 0 9px !important;
   padding: 0 !important;
   z-index: 20 !important;
 }
 
-#titlebar-buttonbox {
+.toolbar-items {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+#TabsToolbar .titlebar-spacer[type="pre-tabs"],
+#TabsToolbar .titlebar-placeholder[type="pre-tabs"] {
+  display: none !important;
+}
+
+.titlebar-buttonbox {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
@@ -95,9 +108,22 @@
 }
 
 .titlebar-max,
-.titlebar-restore,
-:root[sizemode="maximized"] .titlebar-max {
+.titlebar-restore {
   order: 3 !important;
+}
+
+/* Firefox exposes separate native maximize and restore nodes. Show exactly
+ * one of them for the current window state, while keeping the same green look. */
+.titlebar-restore {
+  display: none !important;
+}
+
+:root[sizemode="maximized"] .titlebar-max {
+  display: none !important;
+}
+
+:root[sizemode="maximized"] .titlebar-restore {
+  display: inline-flex !important;
 }
 
 .titlebar-max::before,
