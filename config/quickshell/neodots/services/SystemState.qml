@@ -107,6 +107,26 @@ Singleton {
         root.refreshNetworkConnections();
     }
 
+    function refreshBluetooth() {
+        if (!bluetoothProcess.running)
+            bluetoothProcess.running = true;
+        if (!bluetoothDevicesProcess.running)
+            bluetoothDevicesProcess.running = true;
+    }
+
+    function toggleBluetooth() {
+        if (!root.bluetoothAvailable)
+            return;
+
+        Quickshell.execDetached({
+            command: [
+                "bluetoothctl",
+                "power",
+                root.bluetoothPowered ? "off" : "on"
+            ]
+        });
+    }
+
     readonly property date now: clock.date
     readonly property string timeText: root.formatTime(clock.date)
     readonly property string dateText: root.formatDate(clock.date)
@@ -168,6 +188,22 @@ Singleton {
     property int networkSignal: 0
     property bool wifiEnabled: true
 
+    property bool bluetoothAvailable: false
+    property bool bluetoothPowered: false
+    property string bluetoothConnectedDevice: ""
+
+    readonly property bool bluetoothConnected:
+        root.bluetoothConnectedDevice !== ""
+
+    readonly property string bluetoothStatusText:
+        !root.bluetoothAvailable
+            ? "Unavailable"
+            : !root.bluetoothPowered
+                ? "Bluetooth Off"
+                : root.bluetoothConnected
+                    ? root.bluetoothConnectedDevice
+                    : "Disconnected"
+
     property string volumeText: "—"
     property real volumePercent: -1
     property bool volumeMuted: false
@@ -228,6 +264,56 @@ Singleton {
             root.refreshNetwork();
             root.refreshNetworkConnections();
         }
+    }
+
+    Process {
+        id: bluetoothProcess
+
+        command: ["bluetoothctl", "show"]
+        running: true
+
+        stdout: StdioCollector {
+            id: bluetoothCollector
+
+            onStreamFinished: {
+                const value = bluetoothCollector.text.trim();
+                const powered = value.match(/Powered:\s*(yes|no)/i);
+
+                root.bluetoothAvailable = /^Controller\s+/im.test(value);
+                root.bluetoothPowered = powered
+                    ? powered[1].toLowerCase() === "yes"
+                    : false;
+            }
+        }
+    }
+
+    Process {
+        id: bluetoothDevicesProcess
+
+        command: ["bluetoothctl", "devices", "Connected"]
+        running: true
+
+        stdout: StdioCollector {
+            id: bluetoothDevicesCollector
+
+            onStreamFinished: {
+                const lines = bluetoothDevicesCollector.text
+                    .trim()
+                    .split("\\n")
+                    .filter(line => /^Device\\s+/i.test(line));
+                root.bluetoothConnectedDevice = lines.length > 0
+                    ? lines[0].replace(/^Device\\s+\\S+\\s*/i, "").trim()
+                        || "Connected device"
+                    : "";
+            }
+        }
+    }
+
+    Timer {
+        interval: 5000
+        running: true
+        repeat: true
+        onTriggered: root.refreshBluetooth()
     }
 
     Process {
