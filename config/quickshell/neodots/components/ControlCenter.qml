@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Window
 import Quickshell
 import "../services"
 
@@ -8,81 +9,149 @@ PopupWindow {
 
     required property Item anchorItem
 
+    readonly property real panelWidth: Math.min(Screen.width * 0.33, Screen.height * 0.48)
+    readonly property real contentInset: panelWidth * 0.045
+    readonly property real sectionGap: panelWidth * 0.028
+    readonly property real modulePadding: panelWidth * 0.032
+    readonly property real blockSize:
+        (panelWidth - contentInset * 2 - sectionGap) / 2
+    readonly property real titleSize: panelWidth * 0.03
+    readonly property real detailSize: panelWidth * 0.024
+    readonly property real panelCornerRadius: 51
+
     anchor.item: root.anchorItem
     anchor.rect.y: root.anchorItem.height + 10
-    anchor.rect.x: -300
+    anchor.rect.x: -root.implicitWidth * 0.77
 
-    implicitWidth: 390
-    implicitHeight: 360
+    implicitWidth: panelWidth
+    implicitHeight: contentLayout.implicitHeight + root.contentInset * 2
     color: "transparent"
     visible: false
     grabFocus: true
 
     Rectangle {
+        id: panelSurface
+
         anchors.fill: parent
-        radius: 24
+        radius: root.panelCornerRadius
         color: Qt.rgba(0.08, 0.09, 0.12, 0.97)
         border.width: 1
         border.color: Qt.rgba(1, 1, 1, 0.12)
+    }
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
+    ColumnLayout {
+        id: contentLayout
 
-            Text {
-                text: "Control Center"
-                color: "#ffffff"
-                font.pixelSize: 16
-                font.weight: Font.DemiBold
-            }
+        anchors.fill: parent
+        anchors.margins: root.contentInset
+        spacing: root.sectionGap
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 10
+        RowLayout {
+            id: connectivityGrid
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.blockSize
+            spacing: root.sectionGap
+
+            ColumnLayout {
+                id: connectivityStack
+
+                Layout.preferredWidth: root.blockSize
+                Layout.fillHeight: true
+                spacing: root.sectionGap
 
                 Rectangle {
                     id: wifiCard
+
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 94
-                    radius: 18
+                    Layout.fillHeight: true
+                    radius: Math.min(root.panelCornerRadius * 0.45, height * 0.28)
                     color: SystemState.networkConnected
                         ? Qt.rgba(0.20, 0.38, 0.72, 0.32)
-                        : Qt.rgba(1, 1, 1, 0.07)
+                        : Qt.rgba(1, 1, 1, 0.075)
 
-                    ColumnLayout {
+                    RowLayout {
                         anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 4
+                        anchors.margins: root.modulePadding
+                        spacing: root.sectionGap * 0.55
 
-                        RowLayout {
+                        ColumnLayout {
                             Layout.fillWidth: true
+                            spacing: root.detailSize * 0.35
 
                             Text {
-                                Layout.fillWidth: true
                                 text: "Wi-Fi"
                                 color: "#ffffff"
-                                font.pixelSize: 13
+                                font.pixelSize: root.titleSize
                                 font.weight: Font.DemiBold
                             }
 
                             Text {
-                                text: root.networkIcon
-                                color: "#ffffff"
-                                font.pixelSize: 16
+                                Layout.fillWidth: true
+                                text: !SystemState.wifiEnabled
+                                    ? "Wi-Fi Off"
+                                    : SystemState.networkConnected
+                                        ? (SystemState.networkName || "Connected")
+                                        : "Disconnected"
+                                color: Qt.rgba(1, 1, 1, 0.64)
+                                font.pixelSize: root.detailSize
+                                elide: Text.ElideRight
                             }
                         }
 
-                        Text {
-                            text: SystemState.wifiEnabled
-                                ? (SystemState.networkConnected
-                                    ? SystemState.networkName
-                                    : "Not Connected")
-                                : "Wi-Fi Off"
-                            color: Qt.rgba(1, 1, 1, 0.60)
-                            font.pixelSize: 11
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
+                        Canvas {
+                            id: wifiIcon
+
+                            Layout.preferredWidth: root.blockSize * 0.23
+                            Layout.preferredHeight: root.blockSize * 0.23
+
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                ctx.lineCap = "round";
+                                ctx.lineJoin = "round";
+                                ctx.strokeStyle = "#ffffff";
+                                ctx.fillStyle = "#ffffff";
+                                ctx.lineWidth = Math.max(1.5, width * 0.065);
+
+                                const cx = width * 0.5;
+                                const cy = height * 0.66;
+                                for (let i = 0; i < 3; i++) {
+                                    ctx.beginPath();
+                                    ctx.arc(
+                                        cx,
+                                        cy,
+                                        width * (0.43 - i * 0.13),
+                                        Math.PI * 1.22,
+                                        Math.PI * 1.78
+                                    );
+                                    ctx.stroke();
+                                }
+
+                                ctx.beginPath();
+                                ctx.arc(cx, height * 0.84, width * 0.055, 0, Math.PI * 2);
+                                ctx.fill();
+
+                                if (!SystemState.wifiEnabled || !SystemState.networkConnected) {
+                                    ctx.beginPath();
+                                    ctx.lineWidth = Math.max(2, width * 0.085);
+                                    ctx.moveTo(width * 0.20, height * 0.22);
+                                    ctx.lineTo(width * 0.80, height * 0.80);
+                                    ctx.stroke();
+                                }
+                            }
+
+                            Connections {
+                                target: SystemState
+
+                                function onWifiEnabledChanged() {
+                                    wifiIcon.requestPaint();
+                                }
+
+                                function onNetworkConnectedChanged() {
+                                    wifiIcon.requestPaint();
+                                }
+                            }
                         }
                     }
 
@@ -93,75 +162,263 @@ PopupWindow {
                 }
 
                 Rectangle {
+                    id: bluetoothCard
+
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 94
-                    radius: 18
-                    color: SystemState.batteryReady
-                        ? Qt.rgba(1, 1, 1, 0.07)
-                        : Qt.rgba(1, 1, 1, 0.04)
+                    Layout.fillHeight: true
+                    radius: Math.min(root.panelCornerRadius * 0.45, height * 0.28)
+                    color: SystemState.bluetoothConnected
+                        ? Qt.rgba(0.20, 0.38, 0.72, 0.32)
+                        : Qt.rgba(1, 1, 1, 0.075)
 
-                    ColumnLayout {
+                    RowLayout {
                         anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 4
+                        anchors.margins: root.modulePadding
+                        spacing: root.sectionGap * 0.55
 
-                        RowLayout {
+                        ColumnLayout {
                             Layout.fillWidth: true
+                            spacing: root.detailSize * 0.35
 
                             Text {
-                                Layout.fillWidth: true
-                                text: "Battery"
+                                text: "Bluetooth"
                                 color: "#ffffff"
-                                font.pixelSize: 13
+                                font.pixelSize: root.titleSize
                                 font.weight: Font.DemiBold
                             }
 
                             Text {
-                                text: SystemState.batteryReady
-                                    ? Math.round(SystemState.batteryPercent) + "%"
-                                    : "—"
-                                color: "#ffffff"
-                                font.pixelSize: 15
+                                Layout.fillWidth: true
+                                text: SystemState.bluetoothStatusText
+                                color: Qt.rgba(1, 1, 1, 0.64)
+                                font.pixelSize: root.detailSize
+                                elide: Text.ElideRight
                             }
+                        }
+
+                        Canvas {
+                            id: bluetoothIcon
+
+                            Layout.preferredWidth: root.blockSize * 0.23
+                            Layout.preferredHeight: root.blockSize * 0.23
+
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                ctx.lineCap = "round";
+                                ctx.lineJoin = "round";
+                                ctx.strokeStyle = "#ffffff";
+                                ctx.lineWidth = Math.max(1.7, width * 0.075);
+
+                                const cx = width * 0.5;
+                                const cy = height * 0.5;
+                                ctx.beginPath();
+                                ctx.moveTo(cx, height * 0.08);
+                                ctx.lineTo(cx, height * 0.92);
+                                ctx.moveTo(cx, cy);
+                                ctx.lineTo(width * 0.76, height * 0.27);
+                                ctx.lineTo(cx, height * 0.08);
+                                ctx.lineTo(cx, height * 0.92);
+                                ctx.lineTo(width * 0.76, height * 0.73);
+                                ctx.lineTo(cx, cy);
+                                ctx.lineTo(width * 0.24, height * 0.29);
+                                ctx.moveTo(cx, cy);
+                                ctx.lineTo(width * 0.24, height * 0.71);
+                                ctx.stroke();
+
+                                if (!SystemState.bluetoothPowered || !SystemState.bluetoothConnected) {
+                                    ctx.beginPath();
+                                    ctx.lineWidth = Math.max(2, width * 0.085);
+                                    ctx.moveTo(width * 0.18, height * 0.18);
+                                    ctx.lineTo(width * 0.82, height * 0.82);
+                                    ctx.stroke();
+                                }
+                            }
+
+                            Connections {
+                                target: SystemState
+
+                                function onBluetoothPoweredChanged() {
+                                    bluetoothIcon.requestPaint();
+                                }
+
+                                function onBluetoothConnectedChanged() {
+                                    bluetoothIcon.requestPaint();
+                                }
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: SystemState.toggleBluetooth()
+                    }
+                }
+            }
+
+            Rectangle {
+                id: calendarCard
+
+                Layout.preferredWidth: root.blockSize
+                Layout.fillHeight: true
+                radius: Math.min(root.panelCornerRadius * 0.45, height * 0.28)
+                color: Qt.rgba(1, 1, 1, 0.075)
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: root.modulePadding
+                    spacing: root.sectionGap * 0.5
+
+                    Text {
+                        text: "Calendar"
+                        color: "#ffffff"
+                        font.pixelSize: root.titleSize
+                        font.weight: Font.DemiBold
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Canvas {
+                            anchors.centerIn: parent
+                            width: root.blockSize * 0.36
+                            height: width
+
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                ctx.strokeStyle = Qt.rgba(1, 1, 1, 0.78);
+                                ctx.fillStyle = Qt.rgba(1, 1, 1, 0.78);
+                                ctx.lineWidth = Math.max(1.5, width * 0.045);
+                                ctx.lineJoin = "round";
+
+                                ctx.beginPath();
+                                ctx.roundRect(
+                                    width * 0.12,
+                                    height * 0.20,
+                                    width * 0.76,
+                                    height * 0.68,
+                                    width * 0.08,
+                                    height * 0.08
+                                );
+                                ctx.stroke();
+
+                                ctx.beginPath();
+                                ctx.moveTo(width * 0.12, height * 0.39);
+                                ctx.lineTo(width * 0.88, height * 0.39);
+                                ctx.moveTo(width * 0.32, height * 0.10);
+                                ctx.lineTo(width * 0.32, height * 0.29);
+                                ctx.moveTo(width * 0.68, height * 0.10);
+                                ctx.lineTo(width * 0.68, height * 0.29);
+                                ctx.stroke();
+
+                                for (let row = 0; row < 2; row++) {
+                                    for (let col = 0; col < 3; col++) {
+                                        ctx.beginPath();
+                                        ctx.arc(
+                                            width * (0.30 + col * 0.20),
+                                            height * (0.53 + row * 0.17),
+                                            width * 0.025,
+                                            0,
+                                            Math.PI * 2
+                                        );
+                                        ctx.fill();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "Coming soon"
+                        color: Qt.rgba(1, 1, 1, 0.44)
+                        font.pixelSize: root.detailSize
+                    }
+                }
+            }
+        }
+
+        RowLayout {
+            id: utilityRow
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.blockSize * 0.46
+            spacing: root.sectionGap
+
+            Rectangle {
+                id: batteryCard
+
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: Math.min(root.panelCornerRadius * 0.45, height * 0.28)
+                color: Qt.rgba(1, 1, 1, 0.075)
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: root.modulePadding
+                    spacing: root.detailSize * 0.48
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Battery"
+                            color: "#ffffff"
+                            font.pixelSize: root.titleSize
+                            font.weight: Font.DemiBold
                         }
 
                         Text {
-                            text: SystemState.batteryStatusText
-                            color: Qt.rgba(1, 1, 1, 0.60)
-                            font.pixelSize: 11
+                            text: SystemState.batteryReady
+                                ? Math.round(SystemState.batteryPercent) + "%"
+                                : "—"
+                            color: "#ffffff"
+                            font.pixelSize: root.titleSize
+                            font.weight: Font.DemiBold
                         }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: SystemState.batteryStatusText
+                        color: Qt.rgba(1, 1, 1, 0.60)
+                        font.pixelSize: root.detailSize
+                        elide: Text.ElideRight
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: root.panelWidth * 0.012
+                        radius: height / 2
+                        color: Qt.rgba(1, 1, 1, 0.11)
 
                         Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 5
-                            radius: 2.5
-                            color: Qt.rgba(1, 1, 1, 0.10)
-
-                            Rectangle {
-                                width: parent.width
-                                    * Math.max(
-                                        0,
-                                        Math.min(1, SystemState.batteryPercent / 100)
-                                    )
-                                height: parent.height
-                                radius: parent.radius
-                                color: Qt.rgba(1, 1, 1, 0.80)
-                            }
+                            width: parent.width
+                                * Math.max(0, Math.min(1, SystemState.batteryPercent / 100))
+                            height: parent.height
+                            radius: parent.radius
+                            color: SystemState.batteryCharging
+                                ? Qt.rgba(0.52, 1, 0.68, 0.82)
+                                : Qt.rgba(1, 1, 1, 0.82)
                         }
                     }
                 }
             }
 
             Rectangle {
+                id: soundCard
+
                 Layout.fillWidth: true
-                Layout.preferredHeight: 112
-                radius: 18
-                color: Qt.rgba(1, 1, 1, 0.07)
+                Layout.fillHeight: true
+                radius: Math.min(root.panelCornerRadius * 0.45, height * 0.28)
+                color: Qt.rgba(1, 1, 1, 0.075)
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 8
+                    anchors.margins: root.modulePadding
+                    spacing: root.detailSize * 0.55
 
                     RowLayout {
                         Layout.fillWidth: true
@@ -170,33 +427,33 @@ PopupWindow {
                             Layout.fillWidth: true
                             text: SystemState.volumeMuted ? "Muted" : "Sound"
                             color: "#ffffff"
-                            font.pixelSize: 13
+                            font.pixelSize: root.titleSize
                             font.weight: Font.DemiBold
                         }
 
                         Text {
                             text: SystemState.volumeText
                             color: Qt.rgba(1, 1, 1, 0.68)
-                            font.pixelSize: 11
+                            font.pixelSize: root.detailSize
                         }
 
                         Rectangle {
-                            width: 30
-                            height: 28
-                            radius: 8
-                            color: volumeMuteMouse.containsMouse
-                                ? Qt.rgba(1, 1, 1, 0.10)
-                                : "transparent"
+                            width: root.panelWidth * 0.115
+                            height: root.panelWidth * 0.058
+                            radius: height / 2
+                            color: muteMouse.containsMouse
+                                ? Qt.rgba(1, 1, 1, 0.17)
+                                : Qt.rgba(1, 1, 1, 0.09)
 
                             Text {
                                 anchors.centerIn: parent
-                                text: SystemState.volumeMuted ? "◼" : "◖"
+                                text: SystemState.volumeMuted ? "Unmute" : "Mute"
                                 color: "#ffffff"
-                                font.pixelSize: 14
+                                font.pixelSize: root.detailSize * 0.9
                             }
 
                             MouseArea {
-                                id: volumeMuteMouse
+                                id: muteMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: SystemState.toggleMute()
@@ -208,16 +465,13 @@ PopupWindow {
                         id: volumeTrack
 
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 8
-                        radius: 4
-                        color: Qt.rgba(1, 1, 1, 0.10)
+                        Layout.preferredHeight: root.panelWidth * 0.018
+                        radius: height / 2
+                        color: Qt.rgba(1, 1, 1, 0.11)
 
                         Rectangle {
                             width: parent.width
-                                * Math.max(
-                                    0,
-                                    Math.min(1, SystemState.volumePercent / 100)
-                                )
+                                * Math.max(0, Math.min(1, SystemState.volumePercent / 100))
                             height: parent.height
                             radius: parent.radius
                             color: "#ffffff"
@@ -225,15 +479,13 @@ PopupWindow {
 
                         MouseArea {
                             id: volumeMouse
+
                             anchors.fill: parent
                             hoverEnabled: true
                             preventStealing: true
 
                             function updateVolume(x) {
-                                const ratio = Math.max(
-                                    0,
-                                    Math.min(1, x / width)
-                                );
+                                const ratio = Math.max(0, Math.min(1, x / width));
                                 SystemState.setVolumePercent(ratio * 100);
                             }
 
@@ -242,53 +494,13 @@ PopupWindow {
                                 if (pressed)
                                     updateVolume(mouse.x);
                             }
-
                             onWheel: wheel => {
-                                SystemState.adjustVolume(
-                                    wheel.angleDelta.y > 0 ? 5 : -5
-                                );
+                                SystemState.adjustVolume(wheel.angleDelta.y > 0 ? 5 : -5);
                             }
                         }
                     }
-
-                    Text {
-                        text: "Drag, click, or scroll to adjust volume"
-                        color: Qt.rgba(1, 1, 1, 0.42)
-                        font.pixelSize: 10
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "Network signal  " + SystemState.networkSignal + "%"
-                    color: Qt.rgba(1, 1, 1, 0.52)
-                    font.pixelSize: 11
-                }
-
-                Text {
-                    text: SystemState.workspaceText
-                    color: Qt.rgba(1, 1, 1, 0.35)
-                    font.pixelSize: 10
-                    elide: Text.ElideRight
                 }
             }
         }
     }
-
-    readonly property string networkIcon:
-        !SystemState.wifiEnabled
-            ? "○"
-            : !SystemState.networkConnected
-                ? "◌"
-                : SystemState.networkSignal >= 75
-                    ? "▂▄▆█"
-                    : SystemState.networkSignal >= 50
-                        ? "▂▄▆"
-                        : SystemState.networkSignal >= 25
-                            ? "▂▄"
-                            : "▂"
 }
