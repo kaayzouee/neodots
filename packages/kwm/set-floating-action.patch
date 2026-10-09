@@ -56,6 +56,7 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
                  if (ctx.focused_window()) |window| {
                      window.toggle_sticky();
                  }
+             },
 diff --git a/src/kwm/window.zig b/src/kwm/window.zig
 --- a/src/kwm/window.zig
 +++ b/src/kwm/window.zig
