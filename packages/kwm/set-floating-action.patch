@@ -54,7 +54,7 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 +                    .unlimited,
 +                ) catch return;
 +                defer ctx.gpa.free(request);
-+                const requested_app_id = mem.trim(u8, request, " \\r\\n\\t");
++                const requested_app_id = mem.trim(u8, request, " \r\n\t");
 +                if (requested_app_id.len == 0) return;
 +
 +                var it = ctx.windows.safeIterator(.forward);
