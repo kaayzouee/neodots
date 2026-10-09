@@ -332,7 +332,7 @@
                     },
                 },
             },
-            // Dock uses this after the minimized window has become focused.
+            // Restore only if the target window is focused; Dock selects the target first.
             .{
                 .keysym = "r",
                 .modifiers = .{ .mod4 = true, .mod1 = true },
