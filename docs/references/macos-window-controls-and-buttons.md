@@ -31,7 +31,7 @@ The NameThatUI reference calls out the standard close, minimize, and zoom contro
 - Waterfox's controls live in the browser's own title/tab bar. The shell no longer draws a second set of traffic lights in the global Quickshell bar.
 - The CSS changes the appearance and placement of Waterfox's existing titlebar buttons; it does not replace their built-in commands.
 - Red keeps Waterfox's native close-window command.
-- Yellow uses Waterfox's native minimize request. KWM handles that request by moving the window to a reserved, normally invisible tag while retaining its original tag, then focuses another visible window. The Dock retains the path to reactivate and restore the minimized window.
+- Yellow uses Waterfox's native minimize request. KWM moves the window to a reserved, normally invisible tag, then focuses another visible window. Clicking a running app's Dock icon toggles the active app to minimized; clicking again activates it and restores it onto the workspace active before the click.
 - Green keeps Waterfox's native maximize/restore command, which KWM already handles.
 - The buttons use Waterfox's actual `.titlebar-buttonbox-container` and `.titlebar-buttonbox` classes, moved to the leading edge of the tab bar; the native maximize/restore nodes are shown mutually exclusively based on window state, and tabs fill the remaining space. Glyphs appear on hover or keyboard focus, presses give immediate feedback, and motion is disabled when reduced motion is requested.
 - Home Manager merges the managed CSS block into existing Waterfox profiles without deleting unrelated custom CSS. New profiles created after a rebuild need the activation to run again.
