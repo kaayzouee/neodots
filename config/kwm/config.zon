@@ -332,13 +332,13 @@
                     },
                 },
             },
-            // Dock writes the selected app ID to the restore request before sending this key.
+            // Dock writes the selected app ID before sending this app-visibility toggle.
             .{
                 .keysym = "r",
                 .modifiers = .{ .mod4 = true, .mod1 = true },
                 .event = .{
                     .click = .{
-                        .pressed = .restore_minimized_window,
+                        .pressed = .toggle_app_visibility,
                     },
                 },
             },
