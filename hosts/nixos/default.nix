@@ -2,71 +2,13 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ config, pkgs, waterfox, ... }:
+{
+  config,
+  pkgs,
+  waterfox,
+  ...
+}:
 
-let
-  PKG_prolangs =
-    import ../../packages/PKG-prolangs.nix { inherit pkgs; };
-
-  PKG_editors =
-    import ../../packages/PKG-editors.nix { inherit pkgs; };
-
-  PKG_systemnetworking =
-    import ../../packages/PKG-systemnetworking.nix { inherit pkgs; };
-
-  PKG_vpn =
-    import ../../packages/PKG-vpn.nix { inherit pkgs; };
-
-  PKG_multimedia =
-    import ../../packages/PKG-multimedia.nix { inherit pkgs; };
-
-  PKG_WMnoti =
-    import ../../packages/PKG-WMnoti.nix { inherit pkgs; };
-
-  PKG_themes =
-    import ../../packages/PKG-themes.nix { inherit pkgs; };
-
-  PKG_VM =
-    import ../../packages/PKG-VM.nix { inherit pkgs; };
-
-  PKG_ricing =
-    import ../../packages/PKG-forricing.nix { inherit pkgs; };
-
-  PKG_keygen =
-    import ../../packages/PKG-keygen.nix { inherit pkgs; };
-
-  PKG_cli_shg =
-    import ../../packages/cli-tools/PKG-CLI-shg.nix { inherit pkgs; };
-
-  # ---------------------------------------------------------------------------
-  # CLI
-  # ---------------------------------------------------------------------------
-
-  PKG_cli_compression =
-    import ../../packages/cli-tools/PKG-CLI-compression.nix { inherit pkgs; };
-
-  PKG_cli_file_listing =
-    import ../../packages/cli-tools/PKG-CLI-file-listing.nix { inherit pkgs; };
-
-  PKG_cli_file_search =
-    import ../../packages/cli-tools/PKG-CLI-file-search.nix { inherit pkgs; };
-
-  PKG_cli_git =
-    import ../../packages/cli-tools/PKG-CLI-git.nix { inherit pkgs; };
-
-  PKG_cli_monitoring =
-    import ../../packages/cli-tools/PKG-CLI-monitoring.nix { inherit pkgs; };
-
-  PKG_cli_networking =
-    import ../../packages/cli-tools/PKG-CLI-networking.nix { inherit pkgs; };
-
-  PKG_cli_terminal_multiplexers =
-    import ../../packages/cli-tools/PKG-CLI-terminal-multiplexers.nix { inherit pkgs; };
-
-  PKG_cli_terminal_others =
-    import ../../packages/cli-tools/PKG-CLI-terminal-others.nix { inherit pkgs; };
-
-in
 {
   imports = [
     # Machine-specific generated hardware configuration.
@@ -83,6 +25,7 @@ in
     # -------------------------------------------------------------------------
 
     ../../modules/hardware/fonts.nix
+    ../../modules/hardware/fcitx5-lotus.nix
     ../../modules/hardware/inputmethod.nix
     ../../modules/hardware/mice.nix
 
@@ -91,6 +34,7 @@ in
     # -------------------------------------------------------------------------
 
     ../../modules/system/neodots.nix
+    ../../modules/system/packages.nix
     ../../modules/system/networking.nix
     ../../modules/system/boot.nix
     ../../modules/system/sound.nix
@@ -113,6 +57,13 @@ in
   ];
 
   networking.hostName = config.neodots.hostname;
+
+  # Include River in the generated display-manager session directory.
+  # Installing a compositor in environment.systemPackages alone does not
+  # register its .desktop file with LightDM's session chooser.
+  services.displayManager.sessionPackages = [
+    (pkgs.callPackage ../../packages/river { })
+  ];
 
   # ---------------------------------------------------------------------------
   # Nix
@@ -146,32 +97,9 @@ in
   # System-wide packages
   # ---------------------------------------------------------------------------
 
-  environment.systemPackages =
-    PKG_prolangs
-    ++ PKG_editors
-
-    ++ PKG_cli_compression
-    ++ PKG_cli_file_listing
-    ++ PKG_cli_file_search
-    ++ PKG_cli_git
-    ++ PKG_cli_monitoring
-    ++ PKG_cli_networking
-    ++ PKG_cli_terminal_multiplexers
-    ++ PKG_cli_terminal_others
-
-    ++ PKG_systemnetworking
-    ++ PKG_vpn
-    ++ PKG_multimedia
-    ++ PKG_WMnoti
-    ++ PKG_themes
-    ++ PKG_VM
-    ++ PKG_ricing
-    ++ PKG_keygen
-    ++ PKG_cli_shg
-
-    ++ [
-      waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
-    ];
+  environment.systemPackages = [
+    waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
+  ];
 
   system.stateVersion = "26.05";
 }

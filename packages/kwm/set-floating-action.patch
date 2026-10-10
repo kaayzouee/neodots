@@ -1,0 +1,156 @@
+diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
+--- a/src/kwm/binding.zig
++++ b/src/kwm/binding.zig
+@@ -72,5 +72,8 @@ pub const Action = union(enum) {
+     },
+     close,
++    minimize_window,
++    toggle_app_visibility,
++    raise_focused_window,
+     spawn: struct {
+         argv: []const []const u8,
+     },
+@@ -119,7 +122,8 @@ pub const Action = union(enum) {
+     toggle_output_tag: struct { mask: u32 },
+     toggle_window_tag: struct { mask: u32 },
+     switch_to_previous_tag,
+     toggle_floating,
++    set_floating: bool,
+     toggle_sticky,
+     toggle_swallow,
+     zoom: struct { swap: bool },
+diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
+--- a/src/kwm/seat.zig
++++ b/src/kwm/seat.zig
+@@ -504,8 +504,64 @@ fn handle_actions(self: *Self) void {
+             .close => {
+                 if (ctx.focused_window()) |window| {
+                     window.prepare_close();
+                 }
+             },
++            .minimize_window => {
++                if (ctx.focused_window()) |window| {
++                    window.minimize();
++                }
++                ctx.focus_iter(.forward, .none);
++            },
++            .toggle_app_visibility => {
++                // The Dock writes the requested app ID before sending this
++                // binding. Restore a minimized window belonging to that app,
++                // never an unrelated app chosen by global recency.
++                const home = ctx.env.get("HOME") orelse return;
++                const request_path = fmt.allocPrint(
++                    ctx.gpa,
++                    "{s}/.cache/neodots/restore-app-id",
++                    .{home},
++                ) catch return;
++                defer ctx.gpa.free(request_path);
++
++                const cwd = std.Io.Dir.cwd();
++                const request = cwd.readFileAlloc(
++                    ctx.io,
++                    request_path,
++                    ctx.gpa,
++                    .unlimited,
++                ) catch return;
++                defer ctx.gpa.free(request);
++                const requested_app_id = mem.trim(u8, request, " \r\n\t");
++                if (requested_app_id.len == 0) return;
++
++                var it = ctx.windows.safeIterator(.forward);
++                while (it.next()) |window| {
++                    const app_id = window.app_id orelse continue;
++                    if (!mem.eql(u8, app_id, requested_app_id)) continue;
++
++                    if (window.minimized) {
++                        window.restore_minimized();
++                        ctx.focus(window, true);
++                    } else {
++                        // Dock clicks target this app even when another app
++                        // has keyboard focus. Do not make activation a
++                        // prerequisite for minimizing an already visible app.
++                        const was_focused = if (ctx.focused_window()) |focused|
++                            focused == window
++                        else
++                            false;
++                        window.minimize();
++                        if (was_focused) ctx.focus_iter(.forward, .none);
++                    }
++                    break;
++                }
++            },
++            .raise_focused_window => {
++                if (ctx.focused_window()) |window| {
++                    window.restore_minimized();
++                }
++            },
+             .spawn => |data| {
+                 ctx.spawn(data.argv);
+             },
+@@ -655,10 +711,15 @@
+             .toggle_floating => {
+                 if (ctx.focused_window()) |window| {
+                     window.toggle_floating(null);
+                 }
+             },
++            .set_floating => |floating| {
++                if (ctx.focused_window()) |window| {
++                    window.toggle_floating(floating);
++                }
++            },
+             .toggle_sticky => {
+                 if (ctx.focused_window()) |window| {
+                     window.toggle_sticky();
+                 }
+             },
+diff --git a/src/kwm/window.zig b/src/kwm/window.zig
+--- a/src/kwm/window.zig
++++ b/src/kwm/window.zig
+@@ -94,5 +94,7 @@
+ 
+ tag: u32 = 1,
++minimized: bool = false,
++minimized_tag: u32 = 0,
+ pid: i32 = 0,
+ app_id: ?[]const u8 = null,
+ title: ?[]const u8 = null,
+@@ -267,4 +269,32 @@
+ }
+ 
+ 
++pub fn minimize(self: *Self) void {
++    if (self.minimized) return;
++
++    self.minimized_tag = self.tag;
++    self.minimized = true;
++    self.set_tag(0x80000000);
++
++    if (self.output) |output| {
++        const visible_tag = output.tag & 0x7fffffff;
++        output.set_tag(if (visible_tag == 0) 1 else visible_tag);
++    }
++}
++
++
++pub fn restore_minimized(self: *Self) void {
++    const restore_tag = if (self.output) |output|
++        if (output.tag == 0xffffffff) output.prev_tag else output.tag & 0x7fffffff
++    else
++        self.minimized_tag;
++    const target_tag = if (restore_tag == 0) self.minimized_tag else restore_tag;
++
++    self.minimized = false;
++    self.minimized_tag = 0;
++    self.set_tag(target_tag);
++    if (self.output) |output| output.set_tag(target_tag);
++}
++
++
+ pub fn toggle_tag(self: *Self, mask: u32) void {
+@@ -1131,5 +1161,7 @@
+         .minimize_requested => {
+             log.debug("<{*}> minimize requested", .{ window });
++            window.minimize();
++            ctx.focus_iter(.forward, .none);
+         },
+         .parent => |data| {

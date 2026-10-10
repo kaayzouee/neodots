@@ -9,6 +9,10 @@
     package = null;
 
     settings = {
+      font = {
+        size = 11.25;
+      };
+
       window = {
         opacity = 0.88;
       };
@@ -26,13 +30,11 @@
           chars = "\\u0002p";
         }
 
-
         {
           key = "E";
           mods = "Super";
           chars = "\\u0002n";
         }
-
 
         {
           key = "D";
