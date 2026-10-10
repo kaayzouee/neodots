@@ -15,9 +15,6 @@ PanelWindow { // qmllint disable uncreatable-type
     }
 
     property int hoveredIndex: -1
-    property int activationAttempts: 0
-    property bool activationPrepared: false
-    property var activationTarget: null
     property var dockApps: []
 
     // The requested bottom-bar size is proportional to the target monitor's
@@ -45,15 +42,6 @@ PanelWindow { // qmllint disable uncreatable-type
         * config.dockHoverLabelMarginRatio
     readonly property real dockCornerRadius: dockSurfaceHeight
         * config.barCornerRatio
-
-    Timer {
-        id: activationTimer
-
-        interval: 90
-        repeat: true
-
-        onTriggered: root.tryNextActivationTag()
-    }
 
     // App IDs can arrive just after a toplevel is inserted. Reconcile
     // periodically as a fallback, without rebuilding delegates when nothing
@@ -271,106 +259,31 @@ PanelWindow { // qmllint disable uncreatable-type
     function activateApplication(app) {
         const matches = matchingToplevels(app);
         if (matches.length === 0) {
-            activationTimer.stop();
-            root.activationTarget = null;
-            root.activationPrepared = false;
             launchApplication(app);
             return;
         }
 
-        // A second click on the active app's Dock icon minimizes its focused
-        // window, mirroring the macOS Dock toggle. Clicking again follows the
-        // inactive-window path below and brings it back.
-        const active = matches.find(toplevel => toplevel.activated);
-        if (active) {
-            activationTimer.stop();
-            root.activationTarget = null;
-            root.activationPrepared = false;
-            Quickshell.execDetached({
-                command: ["wtype", "-M", "logo", "-M", "alt", "-k", "m", "-m", "alt", "-m", "logo"]
-            });
-            return;
-        }
-
-        // Prefer a minimized toplevel when an app owns multiple windows.
-        const preferred = matches.find(toplevel => toplevel.minimized) || matches[0];
-        root.activationTarget = preferred;
-        root.activationAttempts = 0;
-        root.activationPrepared = false;
-
-        if (root.screen?.name) {
-            Quickshell.execDetached({
-                command: ["riverctl", "focus-output", root.screen.name]
-            });
-        }
-
-        // Send the selected toplevel's exact app ID to KWM before the restore
-        // key arrives. KWM uses this request to find a minimized window for
-        // this app instead of guessing from a global minimize order.
+        // Toggle the clicked app itself. Do not wait for it to become focused:
+        // with multiple visible apps, KWM's focused window may be a different
+        // app, and a focus-dependent shortcut would hide the wrong window.
+        const preferred = matches[0];
         const requestedAppId = String(preferred.appId || "");
-        if (requestedAppId !== "") {
-            Quickshell.execDetached({
-                command: [
-                    "sh", "-c",
-                    "mkdir -p \"$HOME/.cache/neodots\" && printf '%s' \"$1\" > \"$HOME/.cache/neodots/restore-app-id\" && wtype -M logo -M alt -k r -m alt -m logo",
-                    "neodots-dock-restore",
-                    requestedAppId
-                ]
-            });
-        }
-
-        // Continue the standard activation path for non-minimized windows.
-        preferred.activate();
-        activationTimer.restart();
-    }
-
-    function tryNextActivationTag() {
-        const target = root.activationTarget;
-
-        if (!target) {
-            activationTimer.stop();
+        if (requestedAppId === "") {
+            preferred.activate();
             return;
         }
 
-        if (target.activated) {
-            // The restore chord was sent before activation was retried. Raise
-            // the now-focused window onto the active workspace; this is safe
-            // if the first restore already restored this same window.
-            Quickshell.execDetached({
-                command: ["wtype", "-M", "logo", "-M", "alt", "-k", "w", "-m", "alt", "-m", "logo"]
-            });
-            activationTimer.stop();
-            root.activationTarget = null;
-            root.activationAttempts = 0;
-            root.activationPrepared = false;
-            return;
-        }
-
-        root.activationAttempts += 1;
-        if (!root.activationPrepared && root.activationAttempts >= 2) {
-            // Minimized windows live on KWM's private tag. Make that tag
-            // reachable, then retry activation until KWM focuses the target.
-            Quickshell.execDetached({
-                command: ["riverctl", "set-focused-tags", "4294967295"]
-            });
-            root.activationPrepared = true;
-        }
-
-        target.activate();
-
-        if (root.activationAttempts >= 20) {
-            // If the target refuses activation, restore the previous workspace
-            // rather than leave River showing the temporary all-tags view.
-            if (root.activationPrepared) {
-                Quickshell.execDetached({
-                    command: ["riverctl", "focus-previous-tags"]
-                });
-            }
-            activationTimer.stop();
-            root.activationTarget = null;
-            root.activationAttempts = 0;
-            root.activationPrepared = false;
-        }
+        // KWM resolves this app ID to its own window record and toggles that
+        // record's minimized state. The write completes before the key event,
+        // so the request cannot be mistaken for a previous Dock click.
+        Quickshell.execDetached({
+            command: [
+                "sh", "-c",
+                "mkdir -p \"$HOME/.cache/neodots\" && printf '%s' \"$1\" > \"$HOME/.cache/neodots/restore-app-id\" && wtype -M logo -M alt -k r -m alt -m logo",
+                "neodots-dock-toggle",
+                requestedAppId
+            ]
+        });
     }
 
     function launchApplication(app) {
