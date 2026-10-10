@@ -5,7 +5,7 @@ diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
      },
      close,
 +    minimize_window,
-+    restore_minimized_window,
++    toggle_app_visibility,
 +    raise_focused_window,
      spawn: struct {
          argv: []const []const u8,
@@ -22,7 +22,7 @@ diff --git a/src/kwm/binding.zig b/src/kwm/binding.zig
 diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 --- a/src/kwm/seat.zig
 +++ b/src/kwm/seat.zig
-@@ -504,8 +504,52 @@ fn handle_actions(self: *Self) void {
+@@ -504,8 +504,64 @@ fn handle_actions(self: *Self) void {
              .close => {
                  if (ctx.focused_window()) |window| {
                      window.prepare_close();
@@ -34,7 +34,7 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 +                }
 +                ctx.focus_iter(.forward, .none);
 +            },
-+            .restore_minimized_window => {
++            .toggle_app_visibility => {
 +                // The Dock writes the requested app ID before sending this
 +                // binding. Restore a minimized window belonging to that app,
 +                // never an unrelated app chosen by global recency.
@@ -59,11 +59,23 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
 +
 +                var it = ctx.windows.safeIterator(.forward);
 +                while (it.next()) |window| {
-+                    if (!window.minimized) continue;
 +                    const app_id = window.app_id orelse continue;
 +                    if (!mem.eql(u8, app_id, requested_app_id)) continue;
-+                    window.restore_minimized();
-+                    ctx.focus(window, true);
++
++                    if (window.minimized) {
++                        window.restore_minimized();
++                        ctx.focus(window, true);
++                    } else {
++                        // Dock clicks target this app even when another app
++                        // has keyboard focus. Do not make activation a
++                        // prerequisite for minimizing an already visible app.
++                        const was_focused = if (ctx.focused_window()) |focused|
++                            focused == window
++                        else
++                            false;
++                        window.minimize();
++                        if (was_focused) ctx.focus_iter(.forward, .none);
++                    }
 +                    break;
 +                }
 +            },
@@ -75,7 +87,7 @@ diff --git a/src/kwm/seat.zig b/src/kwm/seat.zig
              .spawn => |data| {
                  ctx.spawn(data.argv);
              },
-@@ -655,10 +699,15 @@
+@@ -655,10 +711,15 @@
              .toggle_floating => {
                  if (ctx.focused_window()) |window| {
                      window.toggle_floating(null);
