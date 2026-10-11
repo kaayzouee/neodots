@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+
 { lib, pkgs, ... }:
 
 let
@@ -40,6 +44,7 @@ in
   };
 
   imports = [
+    ../../modules/programs/waterfox.nix
     ../../modules/programs/mako.nix
     ../../modules/theming/wallpaper-swaybg.nix
     ../../modules/programs/tmux.nix

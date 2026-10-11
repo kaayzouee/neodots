@@ -27,6 +27,7 @@
   imports = [
     ../../modules/theming/cursor.nix
     ../../modules/theming/wallpaper.nix
+    ../../modules/programs/waterfox.nix
     ../../modules/programs/alacritty.nix
     ../../modules/programs/picom.nix
     ../../modules/programs/tmux.nix
