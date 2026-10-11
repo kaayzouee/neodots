@@ -18,7 +18,7 @@
 
       blur-background = true;
 
-    # Keep Polybar/wallpaper/etc. sharp
+      # Keep Polybar/wallpaper/etc. sharp
       blur-background-exclude = [
         "window_type = 'dock'"
         "window_type = 'desktop'"

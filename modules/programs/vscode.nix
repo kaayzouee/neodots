@@ -6,6 +6,6 @@
 
 {
 
-programs.vscode.extensions = [ "vadimcn.vscode-lldb" ];
+  programs.vscode.extensions = [ "vadimcn.vscode-lldb" ];
 
 }

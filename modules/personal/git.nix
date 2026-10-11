@@ -2,13 +2,18 @@
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   sops.defaultSopsFile = ../../secrets/secrets.yaml;
 
-  sops.secrets."git/name"      = { };
-  sops.secrets."git/email"     = { };
+  sops.secrets."git/name" = { };
+  sops.secrets."git/email" = { };
   sops.secrets."git/smtp-user" = { };
   sops.secrets."git/smtp-pass" = { };
 
@@ -35,7 +40,7 @@
       };
 
       sendemail = {
-        smtpserver     = "smtp.gmail.com";
+        smtpserver = "smtp.gmail.com";
         smtpserverport = 587;
         smtpencryption = "tls";
       };

@@ -58,7 +58,7 @@
   # ─── NetworkManager ──────────────────────────────────────────────────────
   networking.networkmanager = {
     enable = true;
-    dns = "none";              # stubby owns /etc/resolv.conf, not NM
+    dns = "none"; # stubby owns /etc/resolv.conf, not NM
     wifi.powersave = false;
   };
 
