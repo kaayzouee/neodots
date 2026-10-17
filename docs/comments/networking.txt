@@ -1,0 +1,45 @@
+SPDX-License-Identifier: GPL-3.0-only
+
+Neodots - Long source comments moved out of networking.
+
+Copyright (C) 2026 kaayzouee
+Author: https://github.com/kaayzouee
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+Neodots - comments moved out of source files: networking
+======================================================================
+
+These notes were long enough to bury the code they describe, so they live
+here. Each section is referenced from the source file by number.
+
+[1] {
+    from modules/system/networking.nix (lines at time of move: 5-20)
+----------------------------------------------------------------------
+{
+ networking.networkmanager.enable = true;
+ networking.networkmanager.dns = "none";
+
+ networking.resolvconf.enable = false;
+ services.resolved.enable = false;
+
+ environment.etc."resolv.conf".text = ''
+   nameserver 1.1.1.1
+   nameserver 8.8.8.8
+ '';
+
+ networking.firewall.enable = true;
+}
+
+modules/system/networking.nix

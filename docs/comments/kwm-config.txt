@@ -1,0 +1,180 @@
+SPDX-License-Identifier: GPL-3.0-only
+
+Neodots - Long source comments moved out of kwm-config.
+
+Copyright (C) 2026 kaayzouee
+Author: https://github.com/kaayzouee
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+Neodots - comments moved out of source files: kwm-config
+======================================================================
+
+These notes were long enough to bury the code they describe, so they live
+here. Each section is referenced from the source file by number.
+
+[1] areas:
+    from config/kwm/config.zon (lines at time of move: 125-146)
+----------------------------------------------------------------------
+areas:
+     .tags
+     .{ .mode = "floating" or other modes }, null will match all mode
+     .{ layout = .tile or other layout }, null will match all layouts
+     .title
+     .status
+
+scheme is a struct, no need to specify all fields:
+     .{
+         .normal = .{
+             .fg = u32,
+             .bg = u32,
+         },
+         .select = .{
+             .fg = u32,
+             .bg = u32,
+         }
+     }
+
+mode, layout and status will only use the `normal` color
+tags and title will use both `normal` and `select` color
+
+
+[2] .tile
+    from config/kwm/config.zon (lines at time of move: 207-213)
+----------------------------------------------------------------------
+.tile
+.grid
+.monocle
+.deck
+.scroller
+.centered_master
+.float
+
+
+[3] list of key bindings
+    from config/kwm/config.zon (lines at time of move: 276-301)
+----------------------------------------------------------------------
+list of key bindings
+full scheme:
+      mode: string(< 16 bytes)
+         "default" and "lock" are defined by default
+         "default" is the default mode, if you not set `mode`, the binding will be seemed as "default" mode
+         when the session locked, kwm will switch to "lock" mode
+         you could define any other mode
+      keysym: keysym string
+      modifiers:
+         a struct with fields: shift, ctrl, mod1, mod3, mod4, mod5, and all of these fields are `false` by default
+         set modifiers to .{} means key binding without any modifier
+      event: key binding trigger event
+         there are two options:
+             .event = .{
+                 .repeat = action
+             }
+             after the key pressed, the action will repeatly trigger until key released or any another key pressed
+
+             .event = .{
+                 .click = .{
+                     .pressed = null or action, default is null
+                     .released = null or action, default is null
+                 }
+             }
+             the corrosponding action will only trigger once when key pressed or released
+             the pressed action and released action could define at the same time
+
+
+[4] list of pointer bindings
+    from config/kwm/config.zon (lines at time of move: 1204-1221)
+----------------------------------------------------------------------
+list of pointer bindings
+full scheme:
+      mode: same as key binding
+      button: pointer button
+         .left
+         .right
+         .middle
+      modifiers: same as key binding
+      event: pointer binding trigger event
+             .event = .{
+                 .pressed = null or action, default is null
+                 .released = null or action, default is null
+             }
+             the corrosponding action will only trigger once when pointer button pressed or released
+             the pressed action and released action could define at the same time
+Super + left-drag moves a window (and automatically floats it
+if it was tiled); Super + right-drag resizes it. Keep these bindings
+available in the temporary floating-control mode too.
+
+
+[5] other unmentioned actions:
+    from config/kwm/config.zon (lines at time of move: 1248-1262)
+----------------------------------------------------------------------
+other unmentioned actions:
+     group: run multiple actions in sequence
+        .event = .{
+            .click = .{
+                .pressed = .{
+                    .group = .{
+                        .actions = .{
+                            action1,
+                            action2,
+                            ...
+                        },
+                    },
+                },
+            },
+        }
+
+
+[6] rule part
+    from config/kwm/config.zon (lines at time of move: 1265-1272)
+----------------------------------------------------------------------
+rule part
+
+a rule pattern has fields below:
+     str: pattern string, required
+     regex: bool, if enable regex
+     match_null: bool, if match null
+
+only the first rule matched will be applied
+
+
+[7] window rules
+    from config/kwm/config.zon (lines at time of move: 1274-1287)
+----------------------------------------------------------------------
+window rules
+full scheme:
+     app_id: rule pattern
+     title: rule pattern
+
+     tag: window tag
+     output: output name pattern, same as rule pattern
+     floating: bool, if floating
+     dimension: .{ .width = i32, .height = i32 }, initial dimension
+     decoration: .csd or .ssd, window decoration
+     is_terminal: bool, if set true, means the window could be swallowed
+     disable_swallow: bool, if set true, the window could not swallow any other windows
+     scroller_mfact: f32, initial mfact of the window for scroller layout
+     attach_mode: like `default_attach_mode`, change attach_mode for window matched
+
+
+[8] output rules
+    from config/kwm/config.zon (lines at time of move: 1297-1303)
+----------------------------------------------------------------------
+output rules
+full scheme:
+     name: rule pattern
+
+     presentation_mode: presentation mode, .vsync or .async
+     layout: same as `layout` before but you only need to specify the values you want to change
+     default_layout: same as `default_layout` before

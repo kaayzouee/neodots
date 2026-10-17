@@ -1,6 +1,21 @@
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Home Manager configuration for the primary user.
+#
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
 
 {
   config,
@@ -65,15 +80,7 @@
     ];
   };
 
-  # XFCE session behaviour.
-  #
-  # SaveOnExit = false stops XFCE from writing a new saved session on logout.
-  #
-  # The Failsafe session is what xfce4-session launches on a *fresh* login
-  # (no saved session yet). It hardcodes Client2 = xfce4-panel, which no
-  # longer exists on this system. Every login it tries to launch it, fails,
-  # logs an error, and stalls for ~2s. We replace it with `true` (the
-  # /bin/true binary) so the slot still exists but does nothing.
+  # XFCE session behaviour; see docs/comments/home.txt.
   xfconf.settings."xfce4-session" = {
     "general/SaveOnExit" = false;
     "sessions/Failsafe/Client2_Command" = [ "true" ];

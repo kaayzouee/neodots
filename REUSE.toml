@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - License annotations for files that cannot carry an inline header.
+#
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
+version = 1
+SPDX-PackageName = "neodots"
+SPDX-PackageDownloadLocation = "https://github.com/kaayzouee/neodots"
+
+# Files that cannot carry an inline license header (binary, generated, encrypted
+# or format does not allow comments). tests/check-license-headers.py reads this
+# file and skips the listed paths.
+
+[[annotations]]
+path = ["flake.lock", "secrets/secrets.yaml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 kaayzouee"
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = "packages/kwm/set-floating-action.patch"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 kaayzouee"
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = "config/quickshell/neodots/assets/icons/mactahoe/**.svg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "MacTahoe icon theme contributors (https://github.com/vinceliuice/MacTahoe-icon-theme)"
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = "config/quickshell/neodots/assets/icons/*.svg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 kaayzouee"
+SPDX-License-Identifier = "GPL-3.0-only"

@@ -1,6 +1,22 @@
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Flake entry point: pins inputs and assembles the NixOS
+#          configuration.
+#
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
 
 {
   description = "Neodots NixOS configuration";
@@ -109,5 +125,19 @@
       };
 
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
+
+      # Evaluation-time invariants (see tests/default.nix). A failure throws
+      # during evaluation so `nix flake check --no-build` catches it.
+      checks.${machine.system}.config-invariants =
+        let
+          result = import ./tests {
+            lib = nixpkgs.lib;
+            base = self.nixosConfigurations.${machine.neodots.hostname};
+          };
+        in
+        if result.failed == [ ] then
+          nixpkgs.legacyPackages.${machine.system}.runCommand "neodots-config-invariants" { } "touch $out"
+        else
+          throw result.failureMessage;
     };
 }

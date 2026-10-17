@@ -1,0 +1,45 @@
+SPDX-License-Identifier: GPL-3.0-only
+
+Neodots - Long source comments moved out of boot.
+
+Copyright (C) 2026 kaayzouee
+Author: https://github.com/kaayzouee
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+Neodots - comments moved out of source files: boot
+======================================================================
+
+These notes were long enough to bury the code they describe, so they live
+here. Each section is referenced from the source file by number.
+
+[1] ESP size and generation limit
+    from modules/system/boot.nix
+----------------------------------------------------------------------
+The ESP (nvme0n1p1) is shared between Windows and NixOS and is usually small.
+Every kept generation stores a kernel and an initrd on it (linuxPackages_latest
+makes them large). Without a limit the ESP eventually fills, the bootloader
+install fails halfway, and the default boot entry keeps pointing at an older
+generation whose closure nix.gc has already deleted. That is exactly what
+"Failed to start Find NixOS closure" means. Tune the limit with
+neodots.boot.configurationLimit in hosts/nixos/machine.nix.
+
+
+[2] systemd-boot editor disabled
+    from modules/system/boot.nix
+----------------------------------------------------------------------
+The machine has a passwordless guest account. Letting anyone edit the kernel
+command line at the boot menu (init=/bin/sh) would give them a root shell, so
+the editor is disabled. Recovery goes through an older generation in the menu
+or a live USB instead.

@@ -1,0 +1,141 @@
+SPDX-License-Identifier: GPL-3.0-only
+
+Neodots - Open findings from the feat/river-wayland audit that are not
+         fixed.
+
+Copyright (C) 2026 kaayzouee
+Author: https://github.com/kaayzouee
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+UNRESOLVED ISSUES - feat/river-wayland audit
+=============================================
+
+Everything below was found during the audit and is NOT fixed by the audit
+patch. Items are grouped by what is needed to close them. Nothing in the audit
+patch has been evaluated or built: the audit environment had no Nix. Run
+`nix flake check` and `nixos-rebuild build-vm --flake .#<hostname>` first.
+
+
+A. Needs information from the machine
+-------------------------------------
+
+A1. Root cause of "Failed to start Find NixOS closure" is unconfirmed.
+    Layout: nvme0n1p1 = ESP shared by Windows and NixOS, nvme0n1p3 = Windows C:,
+    nvme0n1p8 = NixOS root (ext4). The most likely chain is a full shared ESP:
+    the bootloader update fails partway, the default entry stays on an old
+    generation, and nix.gc deletes that generation's closure.
+    Evidence still missing: ESP size and free space, the init= path in
+    /boot/loader/entries/*.conf versus /nix/store, and the ext4 fsck result.
+    Commands (from a live USB, root unmounted):
+        mount /dev/disk/by-uuid/<root-uuid> /mnt
+        mount /dev/disk/by-uuid/<esp-uuid>  /mnt/boot
+        df -h /mnt/boot
+        grep -h init= /mnt/boot/loader/entries/*.conf
+        ls /mnt/nix/store | grep nixos-system
+        fsck.ext4 -n /dev/disk/by-uuid/<root-uuid>
+    Mitigation applied: neodots.boot.configurationLimit (default 8). If the
+    ESP is 100 MB, set it to 3-4 in hosts/nixos/machine.nix.
+
+A2. "Browser does not connect" on the guest session is unconfirmed.
+    Suspect: stubby (DNS-over-TLS, port 853) is the only resolver and there is
+    no fallback. Test with `ping 1.1.1.1` and `dig @127.0.0.1 example.com`.
+    If ping works and dig fails, DNS is the cause.
+
+A3. Provenance and licensing of third-party-derived files (author to confirm):
+      packages/river, packages/kwm, packages/fcitx5-lotus, packages/shg,
+      packages/kwm/set-floating-action.patch
+        Headers now state the repository licence for the author's own changes.
+        If these recipes were adapted from nixpkgs (MIT), the MIT notice must
+        be kept with them. Nothing was changed on that assumption.
+      config/fastfetch/config.jsonc
+        config/fastfetch/LICENSE says some code is MIT and "marked in the
+        source files", but the file carries no such marker.
+      config/quickshell/neodots/assets/icons/*.svg
+        MacTahoe icons are covered by REUSE.toml as GPL-3.0-only upstream
+        work. The five svg files outside the mactahoe directory have no
+        recorded origin.
+
+
+B. Needs a design decision
+--------------------------
+
+B1. DNS fallback. A plaintext fallback resolver removes the "all DNS dead on
+    networks that block 853" failure but weakens the DoT guarantee.
+
+B2. Dual-boot clock. Windows stores local time in the RTC, Linux stores UTC.
+    time.hardwareClockInLocalTime = true fixes Linux but breaks the setup if
+    Windows was already switched to UTC. Not changed.
+
+B3. No recovery shell. The root account is locked, so initrd emergency mode is
+    a dead end. boot.initrd.systemd.emergencyAccess = true would allow a shell
+    but removes a protection on a machine with a passwordless guest. Today
+    recovery is: older generation in the menu, or a live USB.
+
+B4. Btrfs is now enabled in machine.nix (the machine already runs Btrfs).
+    Still open: the tracked hardware-configuration.nix in the audited zip is a
+    stale ext4 file and must be replaced by the one generated on the Btrfs
+    machine. Only "/" is tuned by default; add /home, /nix and other subvolume
+    mounts to neodots.btrfs.mountPoints once their layout is confirmed.
+    Snapshots (snapper or btrbk) are not configured. Btrfs does not fix the
+    boot failure and is not what makes the configuration reproducible.
+
+B5. The river user is in wheel and libvirtd (root-equivalent) and duplicates
+    the primary admin. Consider an unprivileged river user with sudo only on
+    the primary account.
+
+B6. Quickshell hot reload is ineffective. river-home.nix installs the config
+    into the read-only store but the watcher watches the live checkout.
+    home.file with mkOutOfStoreSymlink would make edits take effect, at the
+    cost of purity.
+
+B7. nix.gc deletes generations older than 14 days weekly, while the boot menu
+    keeps up to neodots.boot.configurationLimit entries. Between a GC run and
+    the next switch, menu entries can point at deleted closures. Consider a
+    longer delete-older-than or a GC that also reinstalls the bootloader.
+
+B8. The guest home is wiped only at boot (D! tmpfiles rule), not at logout.
+    The guest can also see and start the River session in LightDM, which has
+    no guest configuration.
+
+
+C. Hardcoded values and tidy-ups
+--------------------------------
+
+C1. river-home.nix hardcodes /home/river/neodots for the watcher; the river
+    username is hardcoded in several modules.
+C2. Time zone Asia/Bangkok and the mt7921e modprobe quirk apply to every
+    machine that uses this flake.
+C3. modules/system/xsession.nix is a Home Manager module living under
+    modules/system. modules/programs/vscode.nix is intentionally not imported
+    (see hosts/nixos/default.nix) and is dead code.
+C4. wallpaper.nix and wallpaper-swaybg.nix are near-duplicates.
+C5. hardware-configuration.nix is in .gitignore but the PR tracks it, and the
+    README disagrees. Pick one policy. It is also excluded from the license
+    header check because it is generated.
+C6. River and kwm compile from source on every machine (no binary cache);
+    the hand-edited kwm patch (set-floating-action.patch) is fragile.
+    wlroots_0_20 availability in nixos-26.05 was not verified.
+
+
+D. Test gaps
+------------
+
+D1. CI evaluates and builds but never boots. Nothing exercises guest login,
+    the River session, stubby, or the persistence path at runtime.
+D2. The invariants in tests/default.nix check evaluated configuration only.
+    The shell logic inside river-home.nix (watcher loop, init script) has no
+    test.
+D3. The VM profile (neodots.vm, virtualisation.vmVariant) is unverified.
+    Software rendering of River under VMware or QEMU needs a real run.

@@ -1,6 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-only
+//
+// Neodots - Fastfetch layout used for the Neodots system summary. Portions
+//          derive from MIT-licensed upstream work; see
+//          config/fastfetch/LICENSE.
+//
 // Copyright (C) 2026 kaayzouee
 // Author: https://github.com/kaayzouee
+//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation, version 3 of the License.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+// Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program. If not, see <https://www.gnu.org/licenses/>.
 
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
@@ -48,24 +65,7 @@ SEE LICENSE IN THE SAME DIRECTORY FOR MORE
         },
         {
             "type": "os",
-            // Key format breakdown for OS module:
-            // "║  {icon}  \u001b[s{sysname}\u001b[u\u001b[10C│{$3}║{$2}"
-            //
-            // ║                    - Left border of key block
-            //   {icon}             - OS icon (defined internally by fastfetch)
-            //   \u001b[s           - ANSI escape: save cursor position (ESC[s)
-            // {sysname}            - Format variable: system name (e.g., "Linux", "Darwin")
-            // \u001b[u             - ANSI escape: restore cursor to saved position (ESC[u)
-            //                        Necessary because the length of `{sysname}` differs between different platforms
-            // \u001b[10C           - ANSI escape: move cursor right 10 columns (ESC[10C)
-            // │                    - Right border of key block (always 10 columns from left border)
-            // {$3}                 - Reference to constants[2]: move cursor right 47 columns
-            // ║                    - Right border of value block
-            // {$2}                 - Reference to constants[1]: move cursor left 47 columns
-            //
-            // This creates a fixed-width layout where the key block is exactly 10 columns wide,
-            // regardless of the actual content length. The cursor manipulation ensures proper
-            // alignment for the table-like structure.
+            // See docs/comments/fastfetch-config.txt, section 1.
             "key": "║  {icon}  \u001b[s{sysname}\u001b[u\u001b[10C║{$3}║{$2}"
         },
         {

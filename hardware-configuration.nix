@@ -26,8 +26,20 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/9959fb3b-7828-451f-aac5-6a683027f53d";
-    fsType = "ext4";
+    device = "/dev/disk/by-uuid/0d3355d2-2b9a-40ee-9492-c15f28c1be23";
+    fsType = "btrfs";
+  };
+
+  fileSystems."/home" = {
+    device = "/dev/disk/by-uuid/0d3355d2-2b9a-40ee-9492-c15f28c1be23";
+    fsType = "btrfs";
+    options = [ "subvol=home" ];
+  };
+
+  fileSystems."/nix" = {
+    device = "/dev/disk/by-uuid/0d3355d2-2b9a-40ee-9492-c15f28c1be23";
+    fsType = "btrfs";
+    options = [ "subvol=nix" ];
   };
 
   fileSystems."/boot" = {

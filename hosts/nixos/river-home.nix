@@ -1,18 +1,47 @@
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Home Manager configuration for the river user (River, kwm and
+#          Quickshell session).
+#
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
 
 { lib, pkgs, ... }:
 
 let
   neodotsQuickshellWatch = pkgs.writeShellScript "neodots-quickshell-watch" ''
+    watch_dir=/home/river/neodots/config/quickshell/neodots
+
     while true; do
+      # inotifywait exits immediately when the directory is missing. Without
+      # this guard the loop spins and restarts Quickshell several times a
+      # second forever on any install that has no live checkout.
+      if [ ! -d "$watch_dir" ]; then
+        sleep 30
+        continue
+      fi
+
       ${pkgs.inotify-tools}/bin/inotifywait \
         --recursive \
         --exclude '(^|/)[.]git(/|$)' \
         --event close_write,create,delete,move \
         --format '%w%f' \
-        /home/river/neodots/config/quickshell/neodots >/dev/null 2>&1 || true
+        "$watch_dir" >/dev/null 2>&1 || {
+          sleep 5
+          continue
+        }
 
       # Editors commonly emit several filesystem events for one save.
       sleep 0.15
@@ -177,6 +206,7 @@ in
   systemd.user.services.neodots-quickshell-watch = {
     Unit = {
       Description = "Watch Neodots Quickshell sources";
+      ConditionPathExists = "/home/river/neodots/config/quickshell/neodots";
       After = [ "neodots-quickshell.service" ];
       StartLimitIntervalSec = "0s";
     };

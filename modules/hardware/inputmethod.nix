@@ -1,8 +1,24 @@
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Fcitx5 input method setup (Vietnamese through fcitx5-lotus) and
+#          uinput.
+#
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
 
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   # ---------------------------------------------------------------------------
@@ -17,11 +33,7 @@
   # ---------------------------------------------------------------------------
   # Linux uinput
   # ---------------------------------------------------------------------------
-  #
-  # fcitx5-lotus-server creates/uses a virtual input device through uinput.
-  #
-  # NixOS creates the uinput device/group when this option is enabled.
-  #
+  # See docs/comments/inputmethod.txt.
 
   hardware.uinput.enable = true;
 
@@ -31,6 +43,6 @@
 
   services.fcitx5-lotus = {
     enable = true;
-    users = [ "kay" ];
+    users = [ config.neodots.username ];
   };
 }
