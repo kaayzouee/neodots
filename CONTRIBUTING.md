@@ -158,7 +158,7 @@ Never commit proof-of-concept secrets, real credentials, decrypted SOPS files, o
 ## Generated and machine-specific files
 
 Do not commit local machine artifacts unless they are intentionally part of the repository. Pay particular attention to hardware configuration, decrypted secret files, temporary outputs, and generated build results.
-
+Only the author is allowed to put hardware-config file because gh action needs it (see #c9816f2fd64cbeefa8f95331a458eb55f25802f3).
 Check the repository's `.gitignore` before adding a new generated or machine-specific file.
 
 ## Review and merge
