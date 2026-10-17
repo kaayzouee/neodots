@@ -62,6 +62,11 @@
 
   programs.home-manager.enable = true;
 
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+    silent = true; # optional: less noise on `cd`
+  };
   programs.fish = {
     enable = true;
 

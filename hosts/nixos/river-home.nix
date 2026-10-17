@@ -60,6 +60,12 @@ in
 
   programs.home-manager.enable = true;
 
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+    silent = true;
+  };
+
   programs.fish = {
     enable = true;
 
@@ -88,9 +94,28 @@ in
 
     profiles.default.extensions =
       (with pkgs.vscode-extensions; [
+        # Nix
         jnoortheen.nix-ide
         arrterian.nix-env-selector
+
+        # direnv
+        mkhl.direnv
+
+        # C / C++ / Qt
+        llvm-vs-code-extensions.vscode-clangd
+        ms-vscode.cpptools-extension-pack
+
+        # Rust
+        rust-lang.rust-analyzer
+        tamasfe.even-better-toml
+
+        # Python
+        ms-python.python
+        ms-python.vscode-pylance
       ])
+      ++ [
+        pkgs.vscode-extensions."13xforever"."language-x86-64-assembly"
+      ]
       ++ pkgs.vscode-utils.extensionsFromVscodeMarketplace [
         {
           name = "nix-extension-pack";

@@ -138,19 +138,32 @@
         {
           cpp = pkgs.mkShell {
             name = "cpp";
-            packages = with pkgs; [ clang clang-tools cmake gnumake gdb lldb ];
-            shellHook = ''export CMAKE_EXPORT_COMPILE_COMMANDS=1'';
+            packages = with pkgs; [
+              clang
+              clang-tools
+              cmake
+              gnumake
+              gdb
+              lldb
+            ];
+            shellHook = ''
+              export CMAKE_EXPORT_COMPILE_COMMANDS=1
+              export CC=clang
+              export CXX=clang++
+            '';
           };
 
           qt =
             let
-              qtEnv = with pkgs.qt6; env "qt-custom-${qtbase.version}" [
-                qtbase
-                qtdeclarative
-                qttools
-                qt5compat
-                qtwayland
-              ];
+              qtEnv =
+                with pkgs.qt6;
+                env "qt-custom-${qtbase.version}" [
+                  qtbase
+                  qtdeclarative
+                  qttools
+                  qt5compat
+                  qtwayland
+                ];
             in
             pkgs.mkShell {
               name = "qt";
@@ -165,6 +178,8 @@
               ];
               shellHook = ''
                 export CMAKE_EXPORT_COMPILE_COMMANDS=1
+                export CC=clang
+                export CXX=clang++
                 export QT_PLUGIN_PATH="${qtEnv}/lib/qt-6/plugins"
                 export QML_IMPORT_PATH="${qtEnv}/lib/qt-6/qml"
                 export QT_QPA_PLATFORM_PLUGIN_PATH="${qtEnv}/lib/qt-6/plugins/platforms"
@@ -174,30 +189,59 @@
 
           asm = pkgs.mkShell {
             name = "asm";
-            packages = with pkgs; [ nasm yasm binutils gdb ];
+            packages = with pkgs; [
+              nasm
+              yasm
+              binutils
+              gdb
+            ];
           };
 
           rust = pkgs.mkShell {
             name = "rust";
-            packages = with pkgs; [ rustc cargo rust-analyzer rustfmt clippy ];
+            packages = with pkgs; [
+              rustc
+              cargo
+              rust-analyzer
+              rustfmt
+              clippy
+            ];
           };
 
           python = pkgs.mkShell {
             name = "python";
             packages = with pkgs; [
-              python3 python3Packages.pip python3Packages.virtualenv
-              ruff python3Packages.black
+              python3
+              python3Packages.pip
+              python3Packages.virtualenv
+              ruff
+              python3Packages.black
             ];
           };
         };
 
       # ─────────────────────────── Templates ────────────────────────────
       templates = {
-        cpp    = { description = "C/C++ dev shell";    path = ./templates/cpp; };
-        qt     = { description = "Qt dev shell";       path = ./templates/qt; };
-        asm    = { description = "Assembly dev shell"; path = ./templates/asm; };
-        rust   = { description = "Rust dev shell";     path = ./templates/rust; };
-        python = { description = "Python dev shell";   path = ./templates/python; };
+        cpp = {
+          description = "C/C++ dev shell";
+          path = ./templates/cpp;
+        };
+        qt = {
+          description = "Qt dev shell";
+          path = ./templates/qt;
+        };
+        asm = {
+          description = "Assembly dev shell";
+          path = ./templates/asm;
+        };
+        rust = {
+          description = "Rust dev shell";
+          path = ./templates/rust;
+        };
+        python = {
+          description = "Python dev shell";
+          path = ./templates/python;
+        };
       };
 
       # ─────────────────────────── Formatter ────────────────────────────
