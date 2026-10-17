@@ -46,6 +46,7 @@
     ../../modules/programs/alacritty.nix
     ../../modules/programs/picom.nix
     ../../modules/programs/tmux.nix
+    ../../modules/programs/nano.nix
     ../../modules/programs/fastfetch.nix
     ../../modules/programs/polybar.nix
     ../../modules/system/xsession.nix
@@ -80,6 +81,7 @@
     ];
   };
 
+  xfconf.enable = true;
   # XFCE session behaviour; see docs/comments/home.txt.
   xfconf.settings."xfce4-session" = {
     "general/SaveOnExit" = false;
@@ -92,6 +94,7 @@
 
   xfconf.settings."xfce4-keyboard-shortcuts" = {
     "commands/custom/override" = true;
+    "commands/custom/<Primary><Alt>t" = "alacritty";
     "commands/custom/<Primary><Shift>t" = "thunar";
   };
 

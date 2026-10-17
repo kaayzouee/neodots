@@ -77,11 +77,32 @@ in
     ../../modules/programs/mako.nix
     ../../modules/theming/wallpaper-swaybg.nix
     ../../modules/programs/tmux.nix
+    ../../modules/programs/nano.nix
     ../../modules/programs/alacritty.nix
     ../../modules/programs/fish.nix
   ];
 
+  programs.vscode = {
+    enable = true;
+    mutableExtensionsDir = false;
+
+    profiles.default.extensions =
+      (with pkgs.vscode-extensions; [
+        jnoortheen.nix-ide
+        arrterian.nix-env-selector
+      ])
+      ++ pkgs.vscode-utils.extensionsFromVscodeMarketplace [
+        {
+          name = "nix-extension-pack";
+          publisher = "pinage404";
+          version = "3.0.0";
+          sha256 = "sha256-cWXd6AlyxBroZF+cXZzzWZbYPDuOqwCZIK67cEP5sNk=";
+        }
+      ];
+  };
+
   home.packages = with pkgs; [
+    nixd
     alacritty
     quickshell
     fuzzel

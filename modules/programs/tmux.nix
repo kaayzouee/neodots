@@ -24,22 +24,21 @@
   programs.tmux = {
     enable = true;
 
-    # 2. Basic settings (corresponding to your tricks)
-    mouse = true; # Mouse support (trick 4)
+    # 2. Basic settings
+    mouse = true; # Mouse support
     shortcut = "b"; # Prefix key (Ctrl+b by default)
     baseIndex = 1; # Window numbers start at 1
     escapeTime = 0; # Reduce ESC delay
     sensibleOnTop = true; # Enable sensible plugin for better defaults
 
-    # 3. Plugin management (tricks 8, 11, etc.)
+    # 3. Plugin management
     plugins = with pkgs; [
-      tmuxPlugins.yank # System clipboard support (trick 3)
-      tmuxPlugins.vim-tmux-navigator # Vim-style pane navigation
-      tmuxPlugins.cpu # Show CPU in status bar (trick 11)
+      tmuxPlugins.yank # System clipboard support
+      tmuxPlugins.cpu # Show CPU in status bar
       # Add more plugins here...
     ];
 
-    # 4. Custom key bindings and advanced config (all your tricks!)
+    # 4. Custom key bindings and advanced config
     extraConfig = ''
       # --- Session switching (trick 1) ---
       bind C-s choose-session -Z
@@ -81,6 +80,15 @@
 
       # --- Custom status bar (optional) ---
       # set -g status-right "#[fg=green]#(acpi -b 2>/dev/null | cut -d' ' -f3-4)#[default] %H:%M"
+
+      # --- Pane navigation (replaces vim-tmux-navigator) ---
+      # Pass the key through when a full-screen app is active
+      # (vim/nano/less/fzf — detected via #{alternate_on});
+      # otherwise use it for pane navigation.
+      bind -n C-h if-shell -F "#{alternate_on}" "send-keys C-h" "select-pane -L"
+      bind -n C-j if-shell -F "#{alternate_on}" "send-keys C-j" "select-pane -D"
+      bind -n C-k if-shell -F "#{alternate_on}" "send-keys C-k" "select-pane -U"
+      bind -n C-l if-shell -F "#{alternate_on}" "send-keys C-l" "select-pane -R"
     '';
   };
 

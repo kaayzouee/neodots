@@ -24,6 +24,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
+    # Temporary workaround for solaar test failure (PR #574929 backport).
+    # Remove once merged into nixos-26.05.
+    solaar-pr.url = "github:NixOS/nixpkgs/pull/574929/head";
+
     catppuccin = {
       url = "github:catppuccin/nix/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -59,6 +63,7 @@
       waterfox,
       sops-nix,
       impermanence,
+      solaar-pr,
     }:
 
     let
@@ -69,7 +74,7 @@
         system = machine.system;
 
         specialArgs = {
-          inherit waterfox;
+          inherit waterfox solaar-pr;
         };
 
         modules = [

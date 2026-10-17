@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Neodots - Legacy VS Code extension list (not imported; VS Code is configured
-#          through Home Manager).
+# Neodots - nano configuration.
 #
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
@@ -18,10 +17,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
+  # Install nano in the user profile
+  home.packages = [ pkgs.nano ];
 
-  programs.vscode.extensions = [ "vadimcn.vscode-lldb" ];
-
+  # Write the nanorc file directly
+  home.file.".nanorc".text = ''
+    set mouse
+    set nowrap
+    set tabsize 2
+    set linenumbers
+  '';
 }
