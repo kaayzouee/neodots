@@ -10,3 +10,5 @@ bin/
 secrets/*.plain.*
 /result
 /result-*
+.direnv/
+.envrc.local

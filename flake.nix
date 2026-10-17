@@ -70,6 +70,7 @@
       machine = import ./hosts/nixos/machine.nix;
     in
     {
+      # ─────────────────────────── NixOS host ───────────────────────────
       nixosConfigurations.${machine.neodots.hostname} = nixpkgs.lib.nixosSystem {
         system = machine.system;
 
@@ -129,10 +130,80 @@
         ];
       };
 
+      # ─────────────────────────── Dev shells ───────────────────────────
+      devShells.${machine.system} =
+        let
+          pkgs = nixpkgs.legacyPackages.${machine.system};
+        in
+        {
+          cpp = pkgs.mkShell {
+            name = "cpp";
+            packages = with pkgs; [ clang clang-tools cmake gnumake gdb lldb ];
+            shellHook = ''export CMAKE_EXPORT_COMPILE_COMMANDS=1'';
+          };
+
+          qt =
+            let
+              qtEnv = with pkgs.qt6; env "qt-custom-${qtbase.version}" [
+                qtbase
+                qtdeclarative
+                qttools
+                qt5compat
+                qtwayland
+              ];
+            in
+            pkgs.mkShell {
+              name = "qt";
+              packages = [
+                qtEnv
+                pkgs.clang
+                pkgs.clang-tools
+                pkgs.cmake
+                pkgs.gnumake
+                pkgs.gdb
+                pkgs.qtcreator
+              ];
+              shellHook = ''
+                export CMAKE_EXPORT_COMPILE_COMMANDS=1
+                export QT_PLUGIN_PATH="${qtEnv}/lib/qt-6/plugins"
+                export QML_IMPORT_PATH="${qtEnv}/lib/qt-6/qml"
+                export QT_QPA_PLATFORM_PLUGIN_PATH="${qtEnv}/lib/qt-6/plugins/platforms"
+                export PKG_CONFIG_PATH="${qtEnv}/lib/pkgconfig:$PKG_CONFIG_PATH"
+              '';
+            };
+
+          asm = pkgs.mkShell {
+            name = "asm";
+            packages = with pkgs; [ nasm yasm binutils gdb ];
+          };
+
+          rust = pkgs.mkShell {
+            name = "rust";
+            packages = with pkgs; [ rustc cargo rust-analyzer rustfmt clippy ];
+          };
+
+          python = pkgs.mkShell {
+            name = "python";
+            packages = with pkgs; [
+              python3 python3Packages.pip python3Packages.virtualenv
+              ruff python3Packages.black
+            ];
+          };
+        };
+
+      # ─────────────────────────── Templates ────────────────────────────
+      templates = {
+        cpp    = { description = "C/C++ dev shell";    path = ./templates/cpp; };
+        qt     = { description = "Qt dev shell";       path = ./templates/qt; };
+        asm    = { description = "Assembly dev shell"; path = ./templates/asm; };
+        rust   = { description = "Rust dev shell";     path = ./templates/rust; };
+        python = { description = "Python dev shell";   path = ./templates/python; };
+      };
+
+      # ─────────────────────────── Formatter ────────────────────────────
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
 
-      # Evaluation-time invariants (see tests/default.nix). A failure throws
-      # during evaluation so `nix flake check --no-build` catches it.
+      # ─────────────────────────── Checks ───────────────────────────────
       checks.${machine.system}.config-invariants =
         let
           result = import ./tests {
