@@ -22,9 +22,13 @@
   lib,
   neodots,
   pkgs,
+  spicetify-nix,
   ...
 }:
 
+let
+  spicePkgs = spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+in
 {
   home.stateVersion = "26.05";
 
@@ -53,6 +57,23 @@
   );
 
   programs.home-manager.enable = true;
+
+  # Spicetify-Nix wraps the official Nixpkgs Spotify package. Force native
+  # Wayland instead of relying only on NIXOS_OZONE_WL in the session.
+  programs.spicetify = {
+    enable = true;
+    spotifyPackage = pkgs.spotify;
+    wayland = true;
+
+    enabledExtensions = with spicePkgs.extensions; [
+      adblockify
+      hidePodcasts
+      shuffle
+    ];
+
+    theme = spicePkgs.themes.catppuccin;
+    colorScheme = "mocha";
+  };
 
   programs.direnv = {
     enable = true;
