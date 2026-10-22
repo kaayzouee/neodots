@@ -40,4 +40,14 @@ grep -Fq 'programs.xwayland.enable = lib.mkForce false;' modules/desktop/desktop
 grep -Fq 'NIXOS_OZONE_WL = "1";' modules/desktop/desktop-gnome.nix
 grep -Fq 'QT_QPA_PLATFORM = "wayland";' modules/desktop/desktop-gnome.nix
 
+grep -Fq 'nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";' flake.nix
+grep -Fq 'url = "github:Gerg-L/spicetify-nix";' flake.nix
+grep -Fq 'spicetify-nix.homeManagerModules.spicetify' flake.nix
+grep -Fq 'spotifyPackage = pkgs.spotify;' hosts/nixos/home.nix
+grep -Fq 'wayland = true;' hosts/nixos/home.nix
+if grep -nF 'pkgs.spotify' modules/system/packages.nix; then
+  echo "Spotify must be installed through the Spicetify-Nix Home Manager module." >&2
+  exit 1
+fi
+
 echo "GNOME/Wayland migration source checks passed."
