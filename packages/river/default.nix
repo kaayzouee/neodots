@@ -25,7 +25,6 @@
   libGL,
   libevdev,
   libinput,
-  libx11,
   libxkbcommon,
   pixman,
   pkg-config,
@@ -36,10 +35,8 @@
   wayland-protocols,
   wayland-scanner,
   wlroots_0_20,
-  xwayland,
   zig_0_16,
   withManpages ? true,
-  xwaylandSupport ? false,
 }:
 
 let
@@ -65,7 +62,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     pkg-config
     wayland-scanner
-    xwayland
     zig
   ]
   ++ lib.optional withManpages scdoc;
@@ -81,16 +77,14 @@ stdenv.mkDerivation (finalAttrs: {
     wayland-protocols
     wayland-scanner
     wlroots_0_20
-  ]
-  ++ lib.optional xwaylandSupport libx11;
+  ];
 
   zigBuildFlags = [
     "--system"
     "${finalAttrs.deps}"
     "-Doptimize=ReleaseSafe"
   ]
-  ++ lib.optional withManpages "-Dman-pages"
-  ++ lib.optional xwaylandSupport "-Dxwayland";
+  ++ lib.optional withManpages "-Dman-pages";
 
   doInstallCheck = true;
   nativeInstallCheckInputs = [ versionCheckHook ];
