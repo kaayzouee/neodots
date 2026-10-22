@@ -191,6 +191,17 @@ let
         && !(cfg.services.displayManager.lightdm.enable or false);
     }
     {
+      name = "Spotify uses Nixpkgs Spotify through Spicetify-Nix with native Wayland enabled";
+      ok =
+        let
+          spicetify = cfg.home-manager.users.${username}.programs.spicetify;
+        in
+        spicetify.enable
+        && spicetify.wayland
+        && lib.getName spicetify.spotifyPackage == "spotify";
+    }
+
+    {
       name = "legacy X11 UI packages are absent from system and primary-user package lists";
       ok =
         let
@@ -200,7 +211,6 @@ let
             "polybar"
             "networkmanagerapplet"
             "xfce4-appfinder"
-            "spotify"
           ];
           hasForbidden = package: lib.elem (lib.getName package) forbidden;
         in
