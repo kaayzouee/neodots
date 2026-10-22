@@ -47,6 +47,12 @@ GNOME's Mutter compositor replaces Picom. GNOME Shell provides the panel, worksp
 
 The existing Catppuccin Home Manager theme, Waterfox profile customizations, Alacritty, Fish, tmux, Thunar and the native Wayland River setup are retained. Thunar is GTK-based and is not inherently an X11-only application; Nautilus is the GNOME-native alternative if tighter desktop integration is preferred.
 
+## Unstable Fish compatibility
+
+The locked unstable Fish package is 4.9.3, but the NixOS and Home Manager completion generators still call `share/fish/tools/create_manpage_completions.py`, removed upstream in Fish 4.8.0. This breaks package builds such as Alacritty's generated Fish completions even though the configuration evaluates.
+
+The workaround sets `programs.fish.generateCompletions = false` for both NixOS and the relevant Home Manager users. This disables only the automatic generation of completions from man pages; Fish's built-in completions and completions shipped directly by packages remain available. Revisit this override after Nixpkgs updates its completion generator. See [Nixpkgs issue #535122](https://github.com/NixOS/nixpkgs/issues/535122).
+
 ## Application/backend audit
 
 The desktop sets GDK_BACKEND=wayland, QT_QPA_PLATFORM=wayland, MOZ_ENABLE_WAYLAND=1, NIXOS_OZONE_WL=1 and SDL_VIDEODRIVER=wayland. These request native Wayland backends for the relevant GTK, Qt, Mozilla, Chromium/Electron and SDL applications. GNOME is the default GDM session, and XWayland itself is force-disabled.
@@ -118,6 +124,7 @@ The existing workflows also run nix flake check --all-systems --no-build, evalua
 ## Useful references
 
 - **NixOS GNOME desktop setup** — exact GNOME/GDM module options and warning about mixing desktop managers: https://wiki.nixos.org/wiki/GNOME
+- **Nixpkgs Fish completion regression #535122** — Fish 4.8+ removed the man-page completion script; disabling auto-generation is the workaround: https://github.com/NixOS/nixpkgs/issues/535122
 - **NixOS Wayland guidance** — Ozone Wayland environment variable and application compatibility: https://wiki.nixos.org/wiki/Wayland
 - **NixOS manual** — module and system configuration reference: https://nixos.org/manual/nixos/stable/
 - **Wine on NixOS** — package variants and Wayland-only Wine builds: https://wiki.nixos.org/wiki/Wine
