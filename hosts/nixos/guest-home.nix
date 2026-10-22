@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Neodots - Home Manager configuration for the unprivileged guest user (XFCE
-#          session).
+# Neodots - Home Manager configuration for the unprivileged guest user (GNOME
+#          Wayland session).
 #
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
@@ -32,9 +32,7 @@
   home.homeDirectory = "/home/guest";
 
   imports = [
-    ../../modules/programs/polybar.nix
     ../../modules/programs/alacritty.nix
-    ../../modules/programs/picom.nix
   ];
 
   # The shared Alacritty module sends tmux prefix sequences (Super+T/Q/E/D).
@@ -50,8 +48,6 @@
 
   home.packages = [
     pkgs.git
-    pkgs.feh
-    pkgs.xfce4-appfinder
 
     waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
   ];
