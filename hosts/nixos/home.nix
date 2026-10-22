@@ -83,6 +83,10 @@ in
   programs.fish = {
     enable = true;
 
+    # Fish 4.8+ no longer ships the script Home Manager uses to generate
+    # completions from man pages. Vendor and built-in completions still work.
+    generateCompletions = false;
+
     interactiveShellInit = ''
       set -g fish_greeting 'Hello, world! ♡'
 
