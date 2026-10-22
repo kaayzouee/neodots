@@ -46,7 +46,7 @@ in
     # Desktop
     # -------------------------------------------------------------------------
 
-    ../../modules/desktop/desktop-xfce.nix
+    ../../modules/desktop/desktop-gnome.nix
 
     # -------------------------------------------------------------------------
     # Hardware
@@ -88,9 +88,9 @@ in
 
   networking.hostName = config.neodots.hostname;
 
-  # Include River in the generated display-manager session directory.
+  # Include River in GDM's generated Wayland session directory.
   # Installing a compositor in environment.systemPackages alone does not
-  # register its .desktop file with LightDM's session chooser.
+  # register its .desktop file with the session chooser.
   services.displayManager.sessionPackages = [
     (pkgs.callPackage ../../packages/river { })
   ];
