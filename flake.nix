@@ -22,19 +22,24 @@
   description = "Neodots NixOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
 
     # Temporary workaround for solaar test failure (PR #574929 backport).
     # Remove once merged into nixos-26.05.
     solaar-pr.url = "github:NixOS/nixpkgs/pull/574929/head";
 
     catppuccin = {
-      url = "github:catppuccin/nix/release-26.05";
+      url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-26.05";
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    spicetify-nix = {
+      url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -60,6 +65,7 @@
       nixpkgs,
       catppuccin,
       home-manager,
+      spicetify-nix,
       waterfox,
       sops-nix,
       impermanence,
@@ -98,7 +104,7 @@
               home-manager.backupFileExtension = "backup";
 
               home-manager.extraSpecialArgs = {
-                inherit waterfox;
+                inherit waterfox spicetify-nix;
                 neodots = config.neodots;
               };
 
@@ -110,6 +116,7 @@
                 imports = [
                   ./hosts/nixos/home.nix
                   catppuccin.homeModules.catppuccin
+                  spicetify-nix.homeManagerModules.spicetify
                 ];
               };
 
