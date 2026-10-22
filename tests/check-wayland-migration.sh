@@ -39,6 +39,8 @@ grep -Fq 'services.displayManager.gdm.enable = true;' modules/desktop/desktop-gn
 grep -Fq 'programs.xwayland.enable = lib.mkForce false;' modules/desktop/desktop-gnome.nix
 grep -Fq 'NIXOS_OZONE_WL = "1";' modules/desktop/desktop-gnome.nix
 grep -Fq 'QT_QPA_PLATFORM = "wayland";' modules/desktop/desktop-gnome.nix
+grep -Fq 'programs.fish.generateCompletions = false;' modules/programs/fish.nix
+grep -Fq 'generateCompletions = false;' hosts/nixos/home.nix
 
 grep -Fq 'nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";' flake.nix
 grep -Fq 'url = "github:Gerg-L/spicetify-nix";' flake.nix
