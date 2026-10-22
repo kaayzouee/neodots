@@ -21,4 +21,9 @@
 
 {
   programs.fish.enable = true;
+
+  # Fish 4.8+ removed tools/create_manpage_completions.py. Keep Fish's
+  # built-in and vendor completions, but skip Nixpkgs' broken man-page
+  # completion generation while unstable catches up.
+  programs.fish.generateCompletions = false;
 }
