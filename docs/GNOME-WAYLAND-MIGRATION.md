@@ -31,12 +31,13 @@ The primary NixOS session is GNOME on Wayland. GDM is the login manager. XWaylan
 
 | File or area | Before | Migration |
 |---|---|---|
+| flake.nix | Pins Nixpkgs and desktop integrations to the 26.05 release line | Tracks the NixOS unstable channel, follows current Home Manager/Catppuccin inputs, and adds Spicetify-Nix |
 | hosts/nixos/default.nix | Imports desktop-xfce.nix | Imports desktop-gnome.nix; River session registration remains |
 | modules/desktop/desktop-gnome.nix | No GNOME module | Enables GNOME, GDM, default GNOME session, portals and strict Wayland environment; disables XWayland |
 | hosts/nixos/home.nix | Home Manager X session, XFCE xfconf, Polybar/Picom imports | Removes X session and XFCE settings; uses Home Manager dconf for keyboard shortcuts and US keyboard layout |
 | hosts/nixos/guest-home.nix | Polybar, Picom, feh and XFCE app finder | Removes these imports/packages; guest uses GNOME through GDM |
 | modules/theming/wallpaper.nix | feh sets X11 root-window background | Picks a random picture and updates GNOME background preferences with gsettings |
-| modules/system/packages.nix | Picom, NetworkManager applet, Dunst and Nixpkgs Spotify | Removes desktop tools that GNOME replaces and removes the questionable Spotify package; uses Wine's Wayland-only variant |
+| modules/system/packages.nix | Picom, NetworkManager applet, Dunst and a standalone Spotify package | Removes desktop tools GNOME replaces; keeps Wine's Wayland-only variant. Spotify is installed once through Spicetify-Nix in the primary user's Home Manager configuration |
 | packages/river/default.nix | Optional XWayland/X11 build path | Removes xwayland, libx11 and xwaylandSupport from the River recipe |
 | .github/workflows/evaluate.yml | Nix evaluation/build checks | Adds a fast source-level regression test to reject old desktop components |
 | tests/default.nix | Existing NixOS account/system invariants | Adds GNOME/GDM/default-session, disabled-XWayland and legacy-package assertions |
@@ -63,20 +64,15 @@ The desktop sets GDK_BACKEND=wayland, QT_QPA_PLATFORM=wayland, MOZ_ENABLE_WAYLAN
 | feh wallpaper setter | Uses an X11 root-window API; removed. GNOME's background schema replaces it |
 | XFCE app finder and xfconf | Removed; use GNOME Activities overview and Settings/dconf |
 | NetworkManager applet and Dunst | Removed; GNOME Quick Settings and notification centre provide those functions |
-| Nixpkgs spotify | Removed pending a choice: issue #531950 reports that the 26.05 package remains on XWayland despite Wayland flags. With XWayland disabled, that is not an acceptable unverified dependency |
+| Spotify (Nixpkgs, wrapped by Spicetify-Nix) | Use the Nixpkgs unstable Spotify package with programs.spicetify.wayland = true; upstream fixed the wrapper to clear DISPLAY when NIXOS_OZONE_WL=1. Verify successful launch with XWayland disabled |
 
-### Spotify: choose a replacement
+### Spotify with Spicetify-Nix
 
-The repository pins the Nixpkgs 26.05 line. A report against that branch says the native Nixpkgs Spotify package ignores Wayland flags and stays on XWayland. That issue was closed as a duplicate, which is not sufficient evidence that the exact pinned package currently works correctly; I cannot validate the Spotify GUI in this environment. The Nixpkgs package has therefore been removed from this strict Wayland profile rather than leaving a possible XWayland dependency.
+The flake follows the NixOS unstable channel and includes github:Gerg-L/spicetify-nix. The primary user imports Spicetify-Nix through Home Manager, which installs its wrapped Nixpkgs Spotify package; do not add pkgs.spotify separately to environment.systemPackages or home.packages. The configuration explicitly sets spotifyPackage = pkgs.spotify, wayland = true, and the Catppuccin Mocha theme, plus the adblockify, hidePodcasts, and shuffle extensions.
 
-Recommended options:
+Nixpkgs fixed the Spotify Wayland regression in PR #533561, merged to Nixpkgs master on June 20, 2026. The patch unsets DISPLAY when NIXOS_OZONE_WL=1, enabling the wrapper to request native Wayland. Pinning to unstable is needed for the fix to be present in the locked package set. Spicetify-Nix also exposes a wayland option; it is set to true here rather than relying on the ambient environment variable alone.
 
-1. **Flathub Spotify (com.spotify.Client)** — the Flathub project's README says it runs on Wayland by default. Check the actual app on the target machine before relying on it.
-2. **Spotify Web Player in Waterfox** — no additional native app package and avoids the desktop-backend question.
-3. **Another music client/service** — choose one that documents native Wayland support and does not require the X11 socket.
-
-The intended choice needs user confirmation; neither Spotify alternative is silently installed by this migration.
-
+Spicetify-Nix makes customization declarative, but its Spotify UI modifications may need upstream updates when Spotify changes. On a fresh user profile, launch Spotify and sign in first so it can create its user configuration. Then verify the UI, theme, extensions and playback. With XWayland disabled, a Spotify launch failure is a release blocker for this strict Wayland profile.
 ## Input method caveat
 
 This host uses Fcitx 5 and the custom fcitx5-lotus integration. Fcitx's Wayland guide specifically notes that GNOME talks to input methods through the IBus D-Bus protocol, so the IBus frontend must be available/started. Candidate-window behaviour over GNOME Shell UI is also limited. This is a runtime acceptance item, not something Nix evaluation can prove. Verify Vietnamese input in GTK, Qt and Electron apps after switching. Do not globally force GTK_IM_MODULE=fcitx without testing; Fcitx's documentation warns about GTK candidate-window issues when forcing the frontend globally.
@@ -103,6 +99,7 @@ CI source/evaluation checks are added, but they cannot prove that the session re
 5. Verify major applications individually:
    - Waterfox: about:support → Window Protocol should be wayland.
    - Electron apps: inspect their diagnostic page / Chromium GPU information and test screen sharing.
+   - Spotify: check that the Spicetify-wrapped client opens and plays audio, and that the Catppuccin theme/extensions load after first login.
    - Qt apps: confirm they start without an XCB/X11 fallback.
    - Input method: type Vietnamese in GTK, Qt and Electron text fields.
 6. Inspect warning logs:
@@ -125,8 +122,8 @@ The existing workflows also run nix flake check --all-systems --no-build, evalua
 - **NixOS manual** — module and system configuration reference: https://nixos.org/manual/nixos/stable/
 - **Wine on NixOS** — package variants and Wayland-only Wine builds: https://wiki.nixos.org/wiki/Wine
 - **Fcitx 5 on Wayland** — toolkit configuration, GNOME/IBus frontend requirement and caveats: https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland/en
-- **Nixpkgs Spotify report #531950** — report of the 26.05 XWayland regression (closed as duplicate; inspect the follow-up before treating it as fixed): https://github.com/NixOS/nixpkgs/issues/531950
-- **Flathub Spotify package** — application packaging/readme and Wayland claim: https://github.com/flathub/com.spotify.Client
+- **Nixpkgs Spotify fix #533561** — merged wrapper change unsets DISPLAY when NIXOS_OZONE_WL=1: https://github.com/NixOS/nixpkgs/pull/533561
+- **Spicetify-Nix usage/options** — declarative Home Manager integration and native-Wayland option: https://gerg-l.github.io/spicetify-nix/usage.html and https://gerg-l.github.io/spicetify-nix/options.html
 - **GNOME release notes** — distinguishes a native Wayland session from XWayland compatibility: https://release.gnome.org/49/developers/
 
 References checked on 2026-10-22. The pinned inputs in flake.lock remain the source of truth for exact option availability.
