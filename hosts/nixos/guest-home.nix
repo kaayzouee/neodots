@@ -49,7 +49,7 @@
   home.packages = [
     pkgs.git
 
-    waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
+    waterfox.legacyPackages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
   ];
 
   # ---------------------------------------------------------------------------
