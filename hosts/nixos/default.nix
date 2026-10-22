@@ -116,7 +116,7 @@
   # ---------------------------------------------------------------------------
 
   environment.systemPackages = [
-    waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
+    waterfox.legacyPackages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
   ];
 
   system.stateVersion = "26.05";
