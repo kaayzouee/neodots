@@ -34,22 +34,14 @@
     accent = "mauve";
   };
 
-  # Polybar already has an explicit repo-local configuration. Disable the
-  # optional Catppuccin Polybar integration so evaluation does not force its
-  # generated theme source.
-  catppuccin.polybar.enable = false;
-
   imports = [
     ../../modules/theming/cursor.nix
     ../../modules/theming/wallpaper.nix
     ../../modules/programs/waterfox.nix
     ../../modules/programs/alacritty.nix
-    ../../modules/programs/picom.nix
     ../../modules/programs/tmux.nix
     ../../modules/programs/nano.nix
     ../../modules/programs/fastfetch.nix
-    ../../modules/programs/polybar.nix
-    ../../modules/system/xsession.nix
   ]
   ++ lib.optional neodots.personal.enable ../../modules/personal/git.nix;
 
@@ -86,21 +78,31 @@
     ];
   };
 
-  xfconf.enable = true;
-  # XFCE session behaviour; see docs/comments/home.txt.
-  xfconf.settings."xfce4-session" = {
-    "general/SaveOnExit" = false;
-    "sessions/Failsafe/Client2_Command" = [ "true" ];
-  };
+  # GNOME keyboard shortcuts and input source are managed declaratively.
+  dconf.settings = {
+    "org/gnome/desktop/input-sources" = {
+      sources = [ (lib.hm.gvariant.mkTuple [ "xkb" "us" ]) ];
+      xkb-options = [ ];
+    };
 
-  xfconf.settings."xfwm4" = {
-    "general/use_compositing" = false;
-  };
+    "org/gnome/settings-daemon/plugins/media-keys" = {
+      custom-keybindings = [
+        "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+        "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+      ];
+    };
 
-  xfconf.settings."xfce4-keyboard-shortcuts" = {
-    "commands/custom/override" = true;
-    "commands/custom/<Primary><Alt>t" = "alacritty";
-    "commands/custom/<Primary><Shift>t" = "thunar";
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+      name = "Terminal";
+      command = "alacritty";
+      binding = "<Control><Alt>t";
+    };
+
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
+      name = "File Manager";
+      command = "thunar";
+      binding = "<Control><Shift>t";
+    };
   };
 
   xdg.mimeApps = {
