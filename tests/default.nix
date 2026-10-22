@@ -185,6 +185,13 @@ let
       ok = cfg.programs.xwayland.enable == false;
     }
     {
+      name = "Fish man-page completion generation is disabled for Fish 4.8+ compatibility";
+      ok =
+        cfg.programs.fish.generateCompletions == false
+        && cfg.home-manager.users.${username}.programs.fish.generateCompletions == false
+        && cfg.home-manager.users.river.programs.fish.generateCompletions == false;
+    }
+    {
       name = "XFCE and LightDM are not enabled";
       ok =
         !(cfg.services.desktopManager.xfce.enable or false)
