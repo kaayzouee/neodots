@@ -31,7 +31,7 @@ The primary NixOS session is GNOME on Wayland. GDM is the login manager. XWaylan
 
 | File or area | Before | Migration |
 |---|---|---|
-| flake.nix | Pins Nixpkgs and desktop integrations to the 26.05 release line | Tracks the NixOS unstable channel, follows current Home Manager/Catppuccin inputs, and adds Spicetify-Nix |
+| flake.nix | Pins Nixpkgs to 26.05 | Tracks NixOS unstable; Home Manager and Catppuccin stay on their 26.05 release branches and follow the same Nixpkgs input; adds Spicetify-Nix |
 | hosts/nixos/default.nix | Imports desktop-xfce.nix | Imports desktop-gnome.nix; River session registration remains |
 | modules/desktop/desktop-gnome.nix | No GNOME module | Enables GNOME, GDM, default GNOME session, portals and strict Wayland environment; disables XWayland |
 | hosts/nixos/home.nix | Home Manager X session, XFCE xfconf, Polybar/Picom imports | Removes X session and XFCE settings; uses Home Manager dconf for keyboard shortcuts and US keyboard layout |
