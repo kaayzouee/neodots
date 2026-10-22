@@ -196,9 +196,7 @@ let
         let
           spicetify = cfg.home-manager.users.${username}.programs.spicetify;
         in
-        spicetify.enable
-        && spicetify.wayland
-        && lib.getName spicetify.spotifyPackage == "spotify";
+        spicetify.enable && spicetify.wayland && lib.getName spicetify.spotifyPackage == "spotify";
     }
 
     {
