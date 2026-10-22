@@ -109,7 +109,7 @@ The host configuration imports that file when building the `nixos` configuration
 
 ## GNOME and Wayland migration
 
-The primary desktop is GNOME on Wayland with XWayland disabled. The package audit, migration map, runtime checks, unresolved app choice, and useful references are documented in [`docs/GNOME-WAYLAND-MIGRATION.md`](docs/GNOME-WAYLAND-MIGRATION.md).
+The primary desktop is GNOME on Wayland with XWayland disabled. Nixpkgs tracks NixOS unstable, and Spotify is installed through Spicetify-Nix with native Wayland mode explicitly enabled. The package audit, migration map, runtime acceptance checks, and useful references are documented in [`docs/GNOME-WAYLAND-MIGRATION.md`](docs/GNOME-WAYLAND-MIGRATION.md).
 
 ## Development roadmap
 
