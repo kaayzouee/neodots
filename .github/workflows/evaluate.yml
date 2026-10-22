@@ -35,6 +35,9 @@ jobs:
         with:
           install_url: https://releases.nixos.org/nix/nix-2.34.7/install
 
+      - name: Check GNOME/Wayland migration has no X11 leftovers
+        run: bash tests/check-wayland-migration.sh
+
       - name: Provide CI hardware configuration
         run: |
           cat > hardware-configuration.nix <<'EOF'
