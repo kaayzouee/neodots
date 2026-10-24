@@ -18,8 +18,8 @@ active_paths=(
   hosts/nixos/default.nix
   hosts/nixos/home.nix
   hosts/nixos/guest-home.nix
-  modules/desktop
-  modules/programs
+  modules/desktop/*.nix
+  modules/programs/*.nix
   modules/system/packages.nix
   modules/theming/wallpaper.nix
 )
