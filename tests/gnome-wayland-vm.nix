@@ -43,8 +43,9 @@ pkgs.testers.runNixOSTest {
       uid = toString user.uid;
       bus = "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${uid}/bus";
       run = command: "su - ${user.name} -c '${bus} ${command}'";
-      eval = command:
-        run "gdbus call --session -d org.gnome.Shell -o /org/gnome/Shell -m org.gnome.Shell.Eval ${command}";
+      eval =
+        command:
+          run "gdbus call --session -d org.gnome.Shell -o /org/gnome/Shell -m org.gnome.Shell.Eval ${command}";
       startingUp = eval "Main.layoutManager._startingUp";
       launchConsole = run "gapplication launch org.gnome.Console";
       wmClass = eval "global.display.focus_window.wm_class";
