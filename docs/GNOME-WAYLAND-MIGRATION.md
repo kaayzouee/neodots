@@ -121,6 +121,16 @@ bash tests/check-wayland-migration.sh
 
 The existing workflows also run nix flake check --all-systems --no-build, evaluate the NixOS derivation and build the system. GUI testing still requires a real login or a VM with appropriate graphics/input support.
 
+## Automated runtime checks
+
+The Evaluate workflow runs `tests/wayland-client-smoke.nix` as a build-time test. It starts Weston with its headless backend and no X server, then builds and launches tiny GTK 4, Qt 6, SDL 2, and Electron clients with the corresponding native Wayland backend forced. GTK, Qt, and SDL also have to produce Wayland protocol traffic. This catches missing Wayland plugins, broken platform selection, and clients that exit/crash during initial window creation; it is a backend smoke test, not a substitute for testing each application feature.
+
+The flake also defines `checks.x86_64-linux.gnome-wayland-vm` in `tests/gnome-wayland-vm.nix`. It follows the upstream Nixpkgs GNOME integration-test pattern: start GDM, autologin a disposable test user, wait for the Wayland socket, verify GNOME Shell finishes startup, launch GNOME Console, assert XWayland is absent, reboot, and repeat startup assertions. The workflow executes this VM test only when `/dev/kvm` is readable and writable; ordinary GitHub-hosted runners do not consistently expose nested virtualization, so a skipped VM test is reported as a notice rather than a pass.
+
+The existing `nixos-build` job still builds the actual Neodots system closure, and the Evaluate job still evaluates the actual flake and system derivation. Those checks catch missing package outputs and build-time regressions in the configured package set.
+
+Automated CI cannot prove behavior that depends on physical GPU/driver combinations, Vietnamese composition in each real application, screen sharing and portal permissions, a real Spotify login/playback session, or suspend/resume behavior on the target laptop. These remain explicit manual acceptance tests. The GNOME VM test is based on [the Nixpkgs GNOME test](https://github.com/NixOS/nixpkgs/blob/master/nixos/tests/gnome.nix) and [the NixOS test-driver documentation](https://nixos.org/manual/nixos/unstable/#sec-running-nixos-tests).
+
 ## Useful references
 
 - **NixOS GNOME desktop setup** — exact GNOME/GDM module options and warning about mixing desktop managers: https://wiki.nixos.org/wiki/GNOME
