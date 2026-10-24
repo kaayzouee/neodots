@@ -22,22 +22,10 @@
   config,
   pkgs,
   waterfox,
-  solaar-pr,
   ...
 }:
 
-let
-  # Pull solaar from PR #574929's nixpkgs (mocks libnotify in tests).
-  # Remove when the backport lands in nixos-26.05.
-  solaarFromPr = solaar-pr.legacyPackages.${pkgs.stdenv.hostPlatform.system}.solaar;
-in
 {
-  nixpkgs.overlays = [
-    (final: prev: {
-      solaar = solaarFromPr;
-    })
-  ];
-
   imports = [
     # Machine-specific generated hardware configuration.
     ../../hardware-configuration.nix
@@ -46,7 +34,7 @@ in
     # Desktop
     # -------------------------------------------------------------------------
 
-    ../../modules/desktop/desktop-xfce.nix
+    ../../modules/desktop/desktop-gnome.nix
 
     # -------------------------------------------------------------------------
     # Hardware
@@ -88,9 +76,9 @@ in
 
   networking.hostName = config.neodots.hostname;
 
-  # Include River in the generated display-manager session directory.
+  # Include River in GDM's generated Wayland session directory.
   # Installing a compositor in environment.systemPackages alone does not
-  # register its .desktop file with LightDM's session chooser.
+  # register its .desktop file with the session chooser.
   services.displayManager.sessionPackages = [
     (pkgs.callPackage ../../packages/river { })
   ];
@@ -128,7 +116,7 @@ in
   # ---------------------------------------------------------------------------
 
   environment.systemPackages = [
-    waterfox.packages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
+    waterfox.legacyPackages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
   ];
 
   system.stateVersion = "26.05";

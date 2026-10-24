@@ -93,7 +93,7 @@ The configuration creates a separate `river` account but deliberately does not c
 sudo passwd river
 ```
 
-NixOS retains this locally set password across rebuilds. The River compositor is also registered as a display-manager session; select **river** in LightDM's session menu after rebuilding.
+NixOS retains this locally set password across rebuilds. The River compositor is also registered as a display-manager session; select **river** in GDM's session menu after rebuilding.
 
 ### Hardware configuration
 
@@ -106,6 +106,10 @@ For an existing NixOS installation, keep the generated file at:
 ```
 
 The host configuration imports that file when building the `nixos` configuration.
+
+## GNOME and Wayland migration
+
+The primary desktop is GNOME on Wayland with XWayland disabled. Nixpkgs tracks NixOS unstable, and Spotify is installed through Spicetify-Nix with native Wayland mode explicitly enabled. The package audit, migration map, runtime acceptance checks, and useful references are documented in [`docs/GNOME-WAYLAND-MIGRATION.md`](docs/GNOME-WAYLAND-MIGRATION.md).
 
 ## Development roadmap
 

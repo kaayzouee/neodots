@@ -54,4 +54,9 @@ jobs:
             exit 0
           fi
 
-          nix fmt -- --ci "${files[@]}"
+          if ! nix fmt -- --ci "${files[@]}"; then
+            # Show the formatter's proposed diff to make CI failures actionable.
+            nix fmt -- "${files[@]}"
+            git diff -- "${files[@]}"
+            exit 1
+          fi

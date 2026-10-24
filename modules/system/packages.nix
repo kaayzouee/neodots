@@ -67,13 +67,11 @@ let
     fzf
     jq
     stow
-    picom
     fishPlugins.bass
   ];
 
   systemNetworking = with pkgs; [
     gcc
-    networkmanagerapplet
     brightnessctl
     wl-clipboard
     cliphist
@@ -87,13 +85,11 @@ let
     imagemagick
     gimp
     cava
-    spotify
     pdf4qt
     vesktop
   ];
 
   windowManagement = with pkgs; [
-    dunst
     thunar
   ];
 
@@ -106,7 +102,7 @@ let
     virt-manager
     virt-viewer
     swtpm
-    wine
+    wineWow64Packages.waylandFull
     flatpak
   ];
 

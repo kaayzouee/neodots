@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Neodots - Random wallpaper picker for the XFCE session.
+# Neodots - Random wallpaper picker for GNOME on Wayland.
 #
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
@@ -17,24 +17,22 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-# modules/theming/wallpaper.nix
 { pkgs, config, ... }:
 
 let
   picturesDir = "${config.home.homeDirectory}/Pictures";
 
-  pickWallpaper = pkgs.writeShellScript "pick-wallpaper" ''
+  pickWallpaper = pkgs.writeShellScript "pick-gnome-wallpaper" ''
     set -euo pipefail
 
     dir=${picturesDir}
-
     if [ ! -d "$dir" ]; then
       echo "wallpaper dir does not exist: $dir" >&2
       exit 1
     fi
 
     mapfile -d "" files < <(
-      find "$dir" -maxdepth 1 -type f \
+      ${pkgs.findutils}/bin/find "$dir" -maxdepth 1 -type f \
         \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
            -o -iname '*.webp' -o -iname '*.bmp' \) -print0
     )
@@ -44,14 +42,18 @@ let
       exit 1
     fi
 
-    choice=$(printf '%s\0' "''${files[@]}" | shuf -z -n1 | tr -d '\0')
-    exec ${pkgs.feh}/bin/feh --bg-fill "$choice"
+    choice=$(printf '%s\0' "''${files[@]}" | ${pkgs.coreutils}/bin/shuf -z -n1 | ${pkgs.coreutils}/bin/tr -d '\0')
+    uri=$(${pkgs.python3}/bin/python3 -c 'from pathlib import Path; import sys; print(Path(sys.argv[1]).resolve().as_uri())' "$choice")
+
+    ${pkgs.glib}/bin/gsettings set org.gnome.desktop.background picture-uri "'$uri'"
+    ${pkgs.glib}/bin/gsettings set org.gnome.desktop.background picture-uri-dark "'$uri'"
+    ${pkgs.glib}/bin/gsettings set org.gnome.desktop.background picture-options "'zoom'"
   '';
 in
 {
-  systemd.user.services.feh-wallpaper = {
+  systemd.user.services.gnome-wallpaper = {
     Unit = {
-      Description = "Set random desktop wallpaper with feh";
+      Description = "Choose a random GNOME wallpaper";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
