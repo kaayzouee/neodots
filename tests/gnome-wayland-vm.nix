@@ -77,8 +77,10 @@ pkgs.testers.runNixOSTest {
           machine.reboot()
           machine.wait_for_unit("display-manager.service")
           machine.wait_until_succeeds("test -S /run/user/${uid}/wayland-0", timeout=120)
-          machine.wait_for_unit("default.target", "${userName}")
-          machine.wait_until_succeeds("${startingUp} | grep -q 'true,..false'")
+          # The Wayland socket and Shell Eval below are the reliable signals
+          # that autologin recovered; querying the user default.target here can
+          # hang the NixOS test driver's control shell after reboot.
+          machine.wait_until_succeeds("${startingUp} | grep -q 'true,..false'", timeout=120)
           machine.fail("pgrep -x Xwayland")
     '';
 }
