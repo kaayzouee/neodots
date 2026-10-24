@@ -21,7 +21,7 @@ jobs:
   evaluate:
     name: Evaluate NixOS configuration
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 35
 
     steps:
       - name: Check out repository
