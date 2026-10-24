@@ -76,8 +76,8 @@ pkgs.testers.runNixOSTest {
       with subtest("The login session starts again after a reboot"):
           machine.reboot()
           machine.wait_for_unit("display-manager.service")
-          machine.wait_for_file("/run/user/${uid}/wayland-0")
-          machine.wait_for_unit("default.target", "${user.name}")
+          machine.wait_until_succeeds("test -S /run/user/${uid}/wayland-0", timeout=120)
+          machine.wait_for_unit("default.target", "${userName}")
           machine.wait_until_succeeds("${startingUp} | grep -q 'true,..false'")
           machine.fail("pgrep -x Xwayland")
     '';
