@@ -192,13 +192,39 @@ pkgs.runCommand "neodots-wayland-client-smoke"
     </busconfig>
     EOF
 
-    cat > "$work/dbus-daemon" <<EOF
-    #!/bin/sh
-    exec ${pkgs.dbus}/bin/dbus-daemon --config-file="$work/dbus-session.conf" "$@"
-    EOF
-    chmod +x "$work/dbus-daemon"
+    ${pkgs.dbus}/bin/dbus-daemon \
+      --config-file="$work/dbus-session.conf" \
+      --nofork \
+      --print-address=1 > "$work/dbus-address" 2> "$work/dbus.log" &
+    dbus_pid=$!
 
-    dbus-run-session --dbus-daemon="$work/dbus-daemon" -- bash -euo pipefail -c '
+    cleanup() {
+      kill "$dbus_pid" 2>/dev/null || true
+      wait "$dbus_pid" 2>/dev/null || true
+      kill "$weston_pid" 2>/dev/null || true
+      wait "$weston_pid" 2>/dev/null || true
+    }
+    trap cleanup EXIT
+
+    for _ in $(seq 1 100); do
+      if [ -s "$work/dbus-address" ]; then
+        break
+      fi
+      if ! kill -0 "$dbus_pid" 2>/dev/null; then
+        cat "$work/dbus.log" >&2 || true
+        exit 1
+      fi
+      sleep 0.1
+    done
+
+    if [ ! -s "$work/dbus-address" ]; then
+      cat "$work/dbus.log" >&2 || true
+      echo "D-Bus session did not publish an address" >&2
+      exit 1
+    fi
+    export DBUS_SESSION_BUS_ADDRESS="$(cat "$work/dbus-address")"
+
+    bash -euo pipefail -c '
       run_client() {
         name="$1"
         shift
@@ -220,7 +246,7 @@ pkgs.runCommand "neodots-wayland-client-smoke"
       run_client sdl env WAYLAND_DEBUG=1 "$WORKDIR/sdl-smoke"
       grep -q "wl_display.*get_registry" "$WORKDIR/sdl.log"
 
-      run_client electron electron \
+      run_client electron env WAYLAND_DEBUG=1 electron \
         --no-sandbox \
         --disable-gpu \
         --disable-dev-shm-usage \
@@ -228,6 +254,7 @@ pkgs.runCommand "neodots-wayland-client-smoke"
         --enable-features=UseOzonePlatform \
         --ozone-platform=wayland \
         "$WORKDIR/electron-app"
+      grep -q "wl_display.*get_registry" "$WORKDIR/electron.log"
     '
 
     mkdir -p "$out"
