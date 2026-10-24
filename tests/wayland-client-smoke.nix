@@ -178,7 +178,27 @@ pkgs.runCommand "neodots-wayland-client-smoke"
       exit 1
     fi
 
-    dbus-run-session -- bash -euo pipefail -c '
+    # Nix sandbox intentionally has no host /etc/dbus-1/session.conf.
+    # Supply a minimal private session-bus configuration instead of depending
+    # on an OS-level file that only exists on interactive machines.
+    cat > "$work/dbus-session.conf" <<'EOF'
+    <busconfig>
+      <type>session</type>
+      <listen>unix:tmpdir=/tmp</listen>
+      <policy context="default">
+        <allow send_destination="*"/>
+        <allow eavesdrop="true"/>
+      </policy>
+    </busconfig>
+    EOF
+
+    cat > "$work/dbus-daemon" <<EOF
+    #!/bin/sh
+    exec ${pkgs.dbus}/bin/dbus-daemon --config-file="$work/dbus-session.conf" "$@"
+    EOF
+    chmod +x "$work/dbus-daemon"
+
+    dbus-run-session --dbus-daemon="$work/dbus-daemon" -- bash -euo pipefail -c '
       run_client() {
         name="$1"
         shift
