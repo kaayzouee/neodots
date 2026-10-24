@@ -132,6 +132,8 @@ pkgs.runCommand "neodots-wayland-client-smoke"
     EOF
 
     export WORKDIR="$work"
+    export HOME="$work/home"
+    mkdir -p "$HOME"
     export XDG_RUNTIME_DIR="$work/runtime"
     export WAYLAND_DISPLAY="wayland-ci"
     export GDK_BACKEND="wayland"
@@ -202,6 +204,7 @@ pkgs.runCommand "neodots-wayland-client-smoke"
         --no-sandbox \
         --disable-gpu \
         --disable-dev-shm-usage \
+        --user-data-dir="$WORKDIR/electron-profile" \
         --enable-features=UseOzonePlatform \
         --ozone-platform=wayland \
         "$WORKDIR/electron-app"
