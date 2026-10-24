@@ -250,28 +250,31 @@
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
 
       # ─────────────────────────── Checks ───────────────────────────────
-      checks.${machine.system}.config-invariants =
+      checks.${machine.system} =
         let
           result = import ./tests {
             lib = nixpkgs.lib;
             base = self.nixosConfigurations.${machine.neodots.hostname};
           };
         in
-        if result.failed == [ ] then
-          nixpkgs.legacyPackages.${machine.system}.runCommand "neodots-config-invariants" { } "touch $out"
-        else
-          throw result.failureMessage;
+        {
+          config-invariants =
+            if result.failed == [ ] then
+              nixpkgs.legacyPackages.${machine.system}.runCommand "neodots-config-invariants" { } "touch $out"
+            else
+              throw result.failureMessage;
 
-      # Exercise actual GUI clients against a headless Wayland compositor.
-      # Unlike config evaluation, this launches GTK, Qt, SDL and Electron windows.
-      checks.${machine.system}.wayland-client-smoke = import ./tests/wayland-client-smoke.nix {
-        pkgs = nixpkgs.legacyPackages.${machine.system};
-      };
+          # Exercise actual GUI clients against a headless Wayland compositor.
+          # Unlike config evaluation, this launches GTK, Qt, SDL and Electron windows.
+          wayland-client-smoke = import ./tests/wayland-client-smoke.nix {
+            pkgs = nixpkgs.legacyPackages.${machine.system};
+          };
 
-      # Upstream-style end-to-end test for GDM + GNOME Shell. Building/running
-      # this requires a KVM-enabled builder; CI skips only this one check otherwise.
-      checks.${machine.system}.gnome-wayland-vm = import ./tests/gnome-wayland-vm.nix {
-        pkgs = nixpkgs.legacyPackages.${machine.system};
-      };
+          # Upstream-style end-to-end test for GDM + GNOME Shell.
+          # Executing the VM test requires KVM support on the builder.
+          gnome-wayland-vm = import ./tests/gnome-wayland-vm.nix {
+            pkgs = nixpkgs.legacyPackages.${machine.system};
+          };
+        };
     };
 }
