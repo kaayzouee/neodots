@@ -21,6 +21,7 @@ pkgs.testers.runNixOSTest {
 
       users.users.ci = {
         isNormalUser = true;
+        uid = 1000;
         initialPassword = "ci";
       };
 
@@ -37,12 +38,12 @@ pkgs.testers.runNixOSTest {
     };
 
   testScript =
-    { nodes, ... }:
+    { ... }:
     let
-      user = nodes.machine.users.users.ci;
-      uid = toString user.uid;
+      userName = "ci";
+      uid = "1000";
       bus = "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${uid}/bus";
-      run = command: "su - ${user.name} -c '${bus} ${command}'";
+      run = command: "su - ${userName} -c '${bus} ${command}'";
       eval =
         command:
         run "gdbus call --session -d org.gnome.Shell -o /org/gnome/Shell -m org.gnome.Shell.Eval ${command}";
@@ -55,8 +56,8 @@ pkgs.testers.runNixOSTest {
 
       with subtest("GDM starts and creates a Wayland user session"):
           machine.wait_for_unit("display-manager.service")
-          machine.wait_for_file("/run/user/${uid}/wayland-0")
-          machine.wait_for_unit("default.target", "${user.name}")
+          machine.wait_until_succeeds("test -S /run/user/${uid}/wayland-0", timeout=120)
+          machine.wait_for_unit("default.target", "${userName}")
           machine.succeed("systemctl is-active --quiet display-manager.service")
           machine.succeed("pgrep -u ${uid} -x gnome-shell")
           machine.succeed("test -S /run/user/${uid}/wayland-0")
