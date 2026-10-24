@@ -72,3 +72,14 @@ jobs:
 
       - name: Evaluate NixOS system derivation
         run: nix eval --raw .#nixosConfigurations.nixos.config.system.build.toplevel.drvPath
+
+      - name: Run GTK, Qt, SDL and Electron Wayland client smoke tests
+        run: nix build .#checks.x86_64-linux.wayland-client-smoke --print-build-logs
+
+      - name: Run GDM/GNOME reboot integration test when KVM is available
+        run: |
+          if [[ -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]]; then
+            nix build .#checks.x86_64-linux.gnome-wayland-vm --print-build-logs
+          else
+            echo "::notice::Skipped the GDM/GNOME QEMU integration test because this runner does not expose writable /dev/kvm. The headless Wayland client smoke test still runs."
+          fi
