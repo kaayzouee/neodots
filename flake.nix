@@ -261,5 +261,19 @@
           nixpkgs.legacyPackages.${machine.system}.runCommand "neodots-config-invariants" { } "touch $out"
         else
           throw result.failureMessage;
+
+      # Exercise actual GUI clients against a headless Wayland compositor.
+      # Unlike config evaluation, this launches GTK, Qt, SDL and Electron windows.
+      checks.${machine.system}.wayland-client-smoke =
+        import ./tests/wayland-client-smoke.nix {
+          pkgs = nixpkgs.legacyPackages.${machine.system};
+        };
+
+      # Upstream-style end-to-end test for GDM + GNOME Shell. Building/running
+      # this requires a KVM-enabled builder; CI skips only this one check otherwise.
+      checks.${machine.system}.gnome-wayland-vm =
+        import ./tests/gnome-wayland-vm.nix {
+          pkgs = nixpkgs.legacyPackages.${machine.system};
+        };
     };
 }
