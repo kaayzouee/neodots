@@ -64,14 +64,14 @@ pkgs.testers.runNixOSTest {
           machine.fail("pgrep -x Xwayland")
 
       with subtest("GNOME Shell completes startup without a black-screen crash"):
-          machine.wait_until_succeeds("${startingUp} | grep -q 'true,..false'")
+          machine.wait_until_succeeds("${startingUp} | grep -q 'true,..false'", timeout=120)
           machine.succeed("grep -zq 'GDK_BACKEND=wayland' /proc/$(pgrep -o -u ${uid} -f '[g]nome-shell')/environ")
           machine.succeed("grep -zq 'NIXOS_OZONE_WL=1' /proc/$(pgrep -o -u ${uid} -f '[g]nome-shell')/environ")
 
       with subtest("A desktop application opens in the GNOME session"):
           machine.send_key("esc")
           machine.succeed("${launchConsole}")
-          machine.wait_until_succeeds("${wmClass} | grep -q 'true,...org.gnome.Console'")
+          machine.wait_until_succeeds("${wmClass} | grep -q 'true,...org.gnome.Console'", timeout=120)
 
       with subtest("The login session starts again after a reboot"):
           machine.reboot()
