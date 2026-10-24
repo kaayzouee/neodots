@@ -139,8 +139,8 @@ pkgs.runCommand "neodots-wayland-client-smoke"
     export SDL_VIDEODRIVER="wayland"
     export NIXOS_OZONE_WL="1"
     export GSK_RENDERER="cairo"
-    export QT_PLUGIN_PATH="\${pkgs.qt6.qtbase}/lib/qt-6/plugins:\${pkgs.qt6.qtwayland}/lib/qt-6/plugins"
-    export QT_QPA_PLATFORM_PLUGIN_PATH="\${pkgs.qt6.qtwayland}/lib/qt-6/plugins/platforms"
+    export QT_PLUGIN_PATH="${pkgs.qt6.qtbase}/lib/qt-6/plugins:${pkgs.qt6.qtwayland}/lib/qt-6/plugins"
+    export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt6.qtwayland}/lib/qt-6/plugins/platforms"
     unset DISPLAY XAUTHORITY
 
     mkdir -m 0700 -p "$XDG_RUNTIME_DIR"
