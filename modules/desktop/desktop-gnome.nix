@@ -28,9 +28,7 @@
     (final: prev: {
       mutter = prev.mutter.overrideAttrs (old: {
         mesonFlags =
-          (builtins.filter
-            (flag: !(lib.hasPrefix "-Dxwayland=" flag))
-            (old.mesonFlags or [ ]))
+          (builtins.filter (flag: !(lib.hasPrefix "-Dxwayland=" flag)) (old.mesonFlags or [ ]))
           ++ [ "-Dxwayland=false" ];
       });
     })
