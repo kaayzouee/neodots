@@ -61,12 +61,14 @@ pkgs.testers.runNixOSTest {
           machine.succeed("systemctl is-active --quiet display-manager.service")
           machine.succeed("pgrep -u ${uid} -f '[g]nome-shell'")
           machine.succeed("test -S /run/user/${uid}/wayland-0")
-          machine.fail("pgrep -x Xwayland")
 
       with subtest("GNOME Shell completes startup without a black-screen crash"):
           machine.wait_until_succeeds("${startingUp} | grep -q 'true,..false'", timeout=120)
           machine.succeed("grep -zq 'GDK_BACKEND=wayland' /proc/$(pgrep -o -u ${uid} -f '[g]nome-shell')/environ")
           machine.succeed("grep -zq 'NIXOS_OZONE_WL=1' /proc/$(pgrep -o -u ${uid} -f '[g]nome-shell')/environ")
+          # Check after Shell startup: Mutter normally starts XWayland lazily,
+          # so checking immediately after the Wayland socket appears is racy.
+          machine.fail("pgrep -x Xwayland")
 
       with subtest("A desktop application opens in the GNOME session"):
           machine.send_key("esc")
