@@ -6,8 +6,8 @@
 # Author: https://github.com/kaayzouee
 #
 # This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation, version 3 of the License.
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,6 +20,22 @@
 { lib, ... }:
 
 {
+  # programs.xwayland.enable only controls the system-level XWayland package.
+  # Mutter itself is built with XWayland support by default and may start it
+  # during a GNOME Wayland session regardless of that option. Disable the
+  # compositor feature at build time so the runtime policy is actually enforced.
+  nixpkgs.overlays = [
+    (final: prev: {
+      mutter = prev.mutter.overrideAttrs (old: {
+        mesonFlags =
+          (builtins.filter
+            (flag: !(lib.hasPrefix "-Dxwayland=" flag))
+            (old.mesonFlags or [ ]))
+          ++ [ "-Dxwayland=false" ];
+      });
+    })
+  ];
+
   services.desktopManager.gnome.enable = true;
   services.displayManager.gdm.enable = true;
   services.displayManager.defaultSession = "gnome";
