@@ -38,7 +38,6 @@ in
     accent = "mauve";
   };
 
-
   programs.gnome-shell = {
     enable = true;
     extensions = [

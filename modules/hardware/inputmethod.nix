@@ -25,7 +25,6 @@
   # Fcitx5
   # ---------------------------------------------------------------------------
 
-
   environment.systemPackages = with pkgs; [
     wl-clipboard
   ];
