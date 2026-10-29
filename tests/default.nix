@@ -315,17 +315,20 @@ let
 
     # -- networking ------------------------------------------------------
     {
-      name = "static resolv.conf pointing at localhost requires stubby";
-      ok = !(lib.hasInfix "127.0.0.1" resolvConf) || cfg.services.stubby.enable;
-    }
-    {
-      name = "stubby listens on 127.0.0.1:53";
-      ok = lib.elem "127.0.0.1@53" cfg.services.stubby.settings.listen_addresses;
-    }
-    {
-      name = "only NetworkManager runs a DHCP client";
+      name = "resolv.conf uses the configured public DNS servers";
       ok =
-        !cfg.networking.useDHCP && !cfg.networking.dhcpcd.enable && cfg.networking.networkmanager.enable;
+        lib.hasInfix "nameserver 1.1.1.1" resolvConf
+        && lib.hasInfix "nameserver 8.8.8.8" resolvConf
+        && !(lib.hasInfix "127.0.0.1" resolvConf);
+    }
+    {
+      name = "Stubby, systemd-resolved and resolvconf are disabled";
+      ok =
+        !cfg.services.stubby.enable && !cfg.services.resolved.enable && !cfg.networking.resolvconf.enable;
+    }
+    {
+      name = "NetworkManager leaves the static resolv.conf untouched";
+      ok = cfg.networking.networkmanager.dns == "none";
     }
 
     # -- input method ----------------------------------------------------
