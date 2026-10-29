@@ -6,8 +6,8 @@
 # Author: https://github.com/kaayzouee
 #
 # This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation, version 3 of the License.
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,7 +24,7 @@
   linkFarm,
   fetchzip,
   fetchgit,
-  zig,
+  zig_0_16,
 }:
 
 let
@@ -43,7 +43,8 @@ stdenv.mkDerivation (finalAttrs: {
     sha256 = "10vw2lvhbnin0hfxyfsrq2j0yr0sqgpv54nblm7xd2dbvsvwk16f";
   };
 
-  nativeBuildInputs = [ zig ];
+  # shg 0.2.6 uses std.Build.args, which is incompatible with Zig 0.17.
+  nativeBuildInputs = [ zig_0_16 ];
 
   strictDeps = true;
 
