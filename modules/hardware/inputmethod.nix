@@ -25,6 +25,11 @@
   # Fcitx5
   # ---------------------------------------------------------------------------
 
+
+  environment.systemPackages = with pkgs; [
+    wl-clipboard
+  ];
+
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";

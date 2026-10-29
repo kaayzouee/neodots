@@ -3,7 +3,7 @@
 # Author: https://github.com/kaayzouee
 
 keys:
-  - &kay age1avejdq9g56knzfelj0g62php58gap6n3uyfrd8qz0a50m4q78gwszxpytv
+  - &kay age1863nel2mz7pwakfa4fra9845gswu2rndm29t93jn3ewt7cktj30s2yvap0
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$

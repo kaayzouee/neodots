@@ -31,12 +31,19 @@
   sops.secrets."git/email" = { };
   sops.secrets."git/smtp-user" = { };
   sops.secrets."git/smtp-pass" = { };
+  sops.secrets."git/signingkey" = { };
 
   sops.templates."git-identity.conf" = {
     content = ''
       [user]
         name  = ${config.sops.placeholder."git/name"}
         email = ${config.sops.placeholder."git/email"}
+
+      [commit]
+        gpgsign = true
+
+      [gpg]
+        program=gpg
 
       [sendemail]
         smtpuser = ${config.sops.placeholder."git/smtp-user"}

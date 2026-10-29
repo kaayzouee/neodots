@@ -38,6 +38,16 @@ in
     accent = "mauve";
   };
 
+
+  programs.gnome-shell = {
+    enable = true;
+    extensions = [
+      {
+        package = pkgs.gnomeExtensions.kimpanel;
+      }
+    ];
+  };
+
   imports = [
     ../../modules/theming/cursor.nix
     ../../modules/theming/wallpaper.nix
