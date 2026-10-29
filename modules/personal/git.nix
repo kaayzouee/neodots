@@ -38,6 +38,7 @@
       [user]
         name  = ${config.sops.placeholder."git/name"}
         email = ${config.sops.placeholder."git/email"}
+        signingkey = ${config.sops.placeholder."git/signingkey"}
 
       [commit]
         gpgsign = true
