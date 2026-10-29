@@ -172,6 +172,57 @@ let
         ) != null;
     }
 
+    # -- GNOME / Wayland --------------------------------------------------
+    {
+      name = "GNOME is enabled and GDM selects its Wayland session";
+      ok =
+        cfg.services.desktopManager.gnome.enable
+        && cfg.services.displayManager.gdm.enable
+        && cfg.services.displayManager.defaultSession == "gnome";
+    }
+    {
+      name = "XWayland is disabled";
+      ok = cfg.programs.xwayland.enable == false;
+    }
+    {
+      name = "Fish man-page completion generation is disabled for Fish 4.8+ compatibility";
+      ok =
+        cfg.programs.fish.generateCompletions == false
+        && cfg.home-manager.users.${username}.programs.fish.generateCompletions == false
+        && cfg.home-manager.users.river.programs.fish.generateCompletions == false;
+    }
+    {
+      name = "XFCE and LightDM are not enabled";
+      ok =
+        !(cfg.services.desktopManager.xfce.enable or false)
+        && !(cfg.services.displayManager.lightdm.enable or false);
+    }
+    {
+      name = "Spotify uses Nixpkgs Spotify through Spicetify-Nix with native Wayland enabled";
+      ok =
+        let
+          spicetify = cfg.home-manager.users.${username}.programs.spicetify;
+        in
+        spicetify.enable && spicetify.wayland && lib.getName spicetify.spotifyPackage == "spotify";
+    }
+
+    {
+      name = "legacy X11 UI packages are absent from system and primary-user package lists";
+      ok =
+        let
+          forbidden = [
+            "feh"
+            "picom"
+            "polybar"
+            "networkmanagerapplet"
+            "xfce4-appfinder"
+          ];
+          hasForbidden = package: lib.elem (lib.getName package) forbidden;
+        in
+        !(lib.any hasForbidden cfg.environment.systemPackages)
+        && !(lib.any hasForbidden cfg.home-manager.users.${username}.home.packages);
+    }
+
     # -- sudo ------------------------------------------------------------
     {
       name = "sudo is wheel-only and always asks for a password";

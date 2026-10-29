@@ -21,7 +21,7 @@ jobs:
   evaluate:
     name: Evaluate NixOS configuration
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 35
 
     steps:
       - name: Check out repository
@@ -34,6 +34,9 @@ jobs:
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
         with:
           install_url: https://releases.nixos.org/nix/nix-2.34.7/install
+
+      - name: Check GNOME/Wayland migration has no X11 leftovers
+        run: bash tests/check-wayland-migration.sh
 
       - name: Provide CI hardware configuration
         run: |
@@ -69,3 +72,14 @@ jobs:
 
       - name: Evaluate NixOS system derivation
         run: nix eval --raw .#nixosConfigurations.nixos.config.system.build.toplevel.drvPath
+
+      - name: Run GTK, Qt, SDL and Electron Wayland client smoke tests
+        run: nix build .#checks.x86_64-linux.wayland-client-smoke --print-build-logs
+
+      - name: Run GDM/GNOME reboot integration test when KVM is available
+        run: |
+          if [[ -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]]; then
+            nix build .#checks.x86_64-linux.gnome-wayland-vm --print-build-logs
+          else
+            echo "::notice::Skipped the GDM/GNOME QEMU integration test because this runner does not expose writable /dev/kvm. The headless Wayland client smoke test still runs."
+          fi

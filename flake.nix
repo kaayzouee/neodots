@@ -22,11 +22,7 @@
   description = "Neodots NixOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-
-    # Temporary workaround for solaar test failure (PR #574929 backport).
-    # Remove once merged into nixos-26.05.
-    solaar-pr.url = "github:NixOS/nixpkgs/pull/574929/head";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
 
     catppuccin = {
       url = "github:catppuccin/nix/release-26.05";
@@ -35,6 +31,11 @@
 
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    spicetify-nix = {
+      url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -60,14 +61,15 @@
       nixpkgs,
       catppuccin,
       home-manager,
+      spicetify-nix,
       waterfox,
       sops-nix,
       impermanence,
-      solaar-pr,
     }:
 
     let
       machine = import ./hosts/nixos/machine.nix;
+      mutterNoXWaylandOverlay = import ./modules/desktop/mutter-no-xwayland-overlay.nix;
     in
     {
       # ─────────────────────────── NixOS host ───────────────────────────
@@ -75,11 +77,15 @@
         system = machine.system;
 
         specialArgs = {
-          inherit waterfox solaar-pr;
+          inherit waterfox;
         };
 
         modules = [
           ./hosts/nixos
+
+          {
+            nixpkgs.overlays = [ mutterNoXWaylandOverlay ];
+          }
 
           {
             neodots = machine.neodots;
@@ -98,7 +104,7 @@
               home-manager.backupFileExtension = "backup";
 
               home-manager.extraSpecialArgs = {
-                inherit waterfox;
+                inherit waterfox spicetify-nix;
                 neodots = config.neodots;
               };
 
@@ -110,6 +116,7 @@
                 imports = [
                   ./hosts/nixos/home.nix
                   catppuccin.homeModules.catppuccin
+                  spicetify-nix.homeManagerModules.spicetify
                 ];
               };
 
@@ -248,16 +255,37 @@
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
 
       # ─────────────────────────── Checks ───────────────────────────────
-      checks.${machine.system}.config-invariants =
+      checks.${machine.system} =
         let
+          # Use the same Mutter build for the VM test as the installed system.
+          pkgs = import nixpkgs {
+            system = machine.system;
+            overlays = [ mutterNoXWaylandOverlay ];
+          };
+
           result = import ./tests {
             lib = nixpkgs.lib;
             base = self.nixosConfigurations.${machine.neodots.hostname};
           };
         in
-        if result.failed == [ ] then
-          nixpkgs.legacyPackages.${machine.system}.runCommand "neodots-config-invariants" { } "touch $out"
-        else
-          throw result.failureMessage;
+        {
+          config-invariants =
+            if result.failed == [ ] then
+              pkgs.runCommand "neodots-config-invariants" { } "touch $out"
+            else
+              throw result.failureMessage;
+
+          # Exercise actual GUI clients against a headless Wayland compositor.
+          # Unlike config evaluation, this launches GTK, Qt, SDL and Electron windows.
+          wayland-client-smoke = import ./tests/wayland-client-smoke.nix {
+            inherit pkgs;
+          };
+
+          # Upstream-style end-to-end test for GDM + GNOME Shell.
+          # Executing the VM test requires KVM support on the builder.
+          gnome-wayland-vm = import ./tests/gnome-wayland-vm.nix {
+            inherit pkgs;
+          };
+        };
     };
 }
