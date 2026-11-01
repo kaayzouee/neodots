@@ -1,0 +1,127 @@
+name: DSH plugin security (daily)
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "modules/programs/deepseek-harness.nix"
+      - ".github/workflows/dsh-plugin-security.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsh-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-audit:
+    name: Dependency audit (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: siwc
+            kind: npm
+            source: dsh-plugin-chatgpt-siwc@0.9.7
+          - name: ponytail
+            kind: npm
+            source: "@wenaixi/dsh-ponytail@5.6.2"
+          - name: ghidra
+            kind: npm
+            source: dsh-ghidra@0.11.4
+          - name: nix-dev-shell
+            kind: github
+            repo: running-grass/dsh-nix-dev-shell
+            rev: 90d39a724613d151838faac7972e3a06693df56
+            subdir: "."
+          - name: java-lsp
+            kind: github
+            repo: 988hj7tczd-oss/dsh-lsp-packs
+            rev: 258bb6409c504fa1eed20b6f70d13009522ca0ce
+            subdir: dsh-lsp-java
+          - name: github-ci
+            kind: npm
+            source: dsh-github-ci@1.0.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Check pinned npm dependency graph (no lifecycle scripts)
+        if: matrix.kind == 'npm'
+        env:
+          SPEC: ${{ matrix.source }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/plugin-audit
+          cd /tmp/plugin-audit
+          printf '{"private":true,"name":"dsh-audit","version":"1.0.0"}\n' > package.json
+          npm install --package-lock-only --ignore-scripts --no-audit --save-exact --legacy-peer-deps "$SPEC"
+          npm audit --audit-level=high --omit=dev
+      - name: Retrieve exact Git commit without running its code
+        if: matrix.kind == 'github'
+        env:
+          REPO: ${{ matrix.repo }}
+          REV: ${{ matrix.rev }}
+          SUBDIR: ${{ matrix.subdir }}
+        run: |
+          set -euo pipefail
+          mkdir /tmp/source
+          git -C /tmp/source init -q
+          git -C /tmp/source remote add origin "https://github.com/$REPO.git"
+          git -C /tmp/source fetch --depth=1 origin HEAD
+          if ! git -C /tmp/source cat-file -e "$REV^{commit}" 2>/dev/null; then
+            # Some GitHub repos reject a shallow fetch of an arbitrary commit SHA.
+            # Fetch full advertised history and verify the pinned object locally.
+            git -C /tmp/source fetch --unshallow origin || git -C /tmp/source fetch origin
+          fi
+          git -C /tmp/source cat-file -e "$REV^{commit}"
+          git -C /tmp/source checkout -q --detach "$REV"
+                    test -f "/tmp/source/$SUBDIR/package.json"
+          mkdir /tmp/plugin-audit
+          cp "/tmp/source/$SUBDIR/package.json" /tmp/plugin-audit/
+          # Preserve existing package lock when present; never run prepare scripts.
+          for lock in package-lock.json npm-shrinkwrap.json; do
+            if [ -f "/tmp/source/$SUBDIR/$lock" ]; then
+              cp "/tmp/source/$SUBDIR/$lock" /tmp/plugin-audit/
+            fi
+          done
+      - name: Audit Git plugin declared runtime dependencies
+        if: matrix.kind == 'github'
+        run: |
+          set -euo pipefail
+          cd /tmp/plugin-audit
+          # Drop scripts and build-only dependencies to avoid arbitrary code execution.
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json'));
+          delete p.scripts;
+          delete p.devDependencies;
+          delete p.peerDependencies;
+          delete p.optionalDependencies;
+          fs.writeFileSync('package.json', JSON.stringify(p));
+          NODE
+          rm -f package-lock.json npm-shrinkwrap.json
+          npm install --package-lock-only --ignore-scripts --no-audit --legacy-peer-deps
+          npm audit --audit-level=high --omit=dev
+      - name: Check source against high-risk patterns
+        if: matrix.kind == 'github'
+        run: |
+          set -euo pipefail
+          # Heuristic signal only; report executable installation hooks for review.
+          grep -R -n -E '"(preinstall|install|postinstall|prepare)"[[:space:]]*:'             "/tmp/source/${{ matrix.subdir }}/package.json" || true
+
+  compatibility-gate:
+    name: DSH compatibility declarations
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Flag known incompatible Java LSP range
+        run: |
+          echo "::warning title=Java LSP compatibility::Pinned @dsh-lsp-packs/dsh-lsp-java@0.1.0 declares DSH <0.2.0, while nixpkgs provides 0.2.1-rc.3. This plugin is not verified compatible."
