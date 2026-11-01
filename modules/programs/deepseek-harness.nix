@@ -25,17 +25,41 @@
 let
   # Every Git source is pinned to an immutable commit, not a moving branch.
   dshPlugins = [
-    { name = "dsh-plugin-chatgpt-siwc"; version = "0.9.7"; source = "dsh-plugin-chatgpt-siwc@0.9.7"; }
-    { name = "@wenaixi/dsh-ponytail"; version = "5.6.2"; source = "@wenaixi/dsh-ponytail@5.6.2"; }
-    { name = "dsh-ghidra"; version = "0.11.4"; source = "dsh-ghidra@0.11.4"; }
-    { name = "dsh-nix-dev-shell"; version = "0.3.0"; source = "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56"; }
+    {
+      name = "dsh-plugin-chatgpt-siwc";
+      version = "0.9.7";
+      source = "dsh-plugin-chatgpt-siwc@0.9.7";
+    }
+    {
+      name = "@wenaixi/dsh-ponytail";
+      version = "5.6.2";
+      source = "@wenaixi/dsh-ponytail@5.6.2";
+    }
+    {
+      name = "dsh-ghidra";
+      version = "0.11.4";
+      source = "dsh-ghidra@0.11.4";
+    }
+    {
+      name = "dsh-nix-dev-shell";
+      version = "0.3.0";
+      source = "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56";
+    }
     # Intentionally excluded: Java LSP 0.1.0 requires DSH < 0.2.0 and is
     # rejected by our pinned DSH 0.2.1-rc.3. Do not bypass allow-version.
-    { name = "dsh-github-ci"; version = "1.0.0"; source = "dsh-github-ci@1.0.0"; }
+    {
+      name = "dsh-github-ci";
+      version = "1.0.0";
+      source = "dsh-github-ci@1.0.0";
+    }
   ];
   installer = pkgs.writeShellApplication {
     name = "neodots-install-dsh-plugins";
-    runtimeInputs = [ pkgs.deepseek-harness pkgs.nodejs_24 pkgs.pnpm_11 ];
+    runtimeInputs = [
+      pkgs.deepseek-harness
+      pkgs.nodejs_24
+      pkgs.pnpm_11
+    ];
     text = ''
       set -euo pipefail
       # Ensure the profile exists before resolving its installed dependencies.
@@ -75,7 +99,10 @@ let
   };
 in
 {
-  home.packages = [ pkgs.deepseek-harness installer ];
+  home.packages = [
+    pkgs.deepseek-harness
+    installer
+  ];
   systemd.user.services.neodots-dsh-plugins = {
     Unit = {
       Description = "Provision pinned DeepSeek Harness plugins";
