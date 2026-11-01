@@ -1,7 +1,26 @@
 # SPDX-License-Identifier: GPL-3.0-only
+
+# Neodots - Deepseek Harness setup source code
+
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
 # DSH is pinned by the existing flake.lock; SIWC is installed at an exact npm version.
 # Note: DSH maintains a mutable profile/pnpm lockfile, so plugin transitive
 # dependencies are not yet reproducible at the Nix store level.
+
 { config, pkgs, ... }:
 let
   installer = pkgs.writeShellApplication {
