@@ -25,7 +25,7 @@ already-pinned `nixpkgs` flake input. The package is currently DSH
 `0.2.1-rc.3` at the locked nixpkgs revision. Neither `river` nor
 `guest` receives the package or the SIWC plugin.
 
-The `neodots-dsh-plugins` user service provisions all six pinned DSH plugins
+The `neodots-dsh-plugins` user service provisions five compatible pinned DSH plugins
 into the `web` profile when their installed version is missing or different. The installer uses the DSH plugin manager,
 disables npm install scripts, and checks the resulting package version. It
 runs independently of the NixOS rebuild so a network outage cannot fail a
@@ -71,7 +71,7 @@ profile containing personal ChatGPT credentials with other users.
 | @wenaixi/dsh-ponytail | npm 5.6.2 |
 | dsh-ghidra | npm 0.11.4 |
 | dsh-nix-dev-shell | running-grass/dsh-nix-dev-shell at `90d39a724613d151838faac7972e3a06693df56a` |
-| @dsh-lsp-packs/dsh-lsp-java | 988hj7tczd-oss/dsh-lsp-packs at `258bb6409c504fa1eed20b6f70d13009522ca0ce`, subdirectory `dsh-lsp-java` |
+| @dsh-lsp-packs/dsh-lsp-java | **Quarantined: not provisioned.** CI still monitors commit `258bb6409c504fa1eed20b6f70d13009522ca0ce`. |
 | dsh-github-ci | npm 1.0.0 |
 
 The Java LSP package declares an upstream DSH compatibility range below
@@ -101,3 +101,5 @@ It does not exercise runtime code, prove absence of credential exfiltration,
 or automatically assess new upstream versions. Findings are visible as
 failed GitHub Actions jobs. Do not enable arbitrary build scripts to fix
 Git-source installation failures without reviewing them.
+
+The Java LSP package is excluded from automatic installation after DSH rejected it at runtime. Its exact-version compatibility exemption is intentionally **not** enabled. Provisioning now continues to `dsh-github-ci`; GitHub CI still audits the Java LSP dependency declaration for security visibility. The web interface at port 3080 was already running on the user's machine, so another `dsh --profile web --no-open` process would fail with `EADDRINUSE`.
