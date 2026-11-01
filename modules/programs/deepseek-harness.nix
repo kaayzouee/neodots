@@ -6,10 +6,10 @@
 let
   installer = pkgs.writeShellApplication {
     name = "neodots-install-dsh-siwc";
-    runtimeInputs = [ pkgs.deepseek-harness pkgs.nodejs_24 pkgs.pnpm ];
+    runtimeInputs = [ pkgs.deepseek-harness pkgs.nodejs_24 pkgs.pnpm_11 ];
     text = ''
       set -euo pipefail
-      manifest="${DSH_HOME:-$HOME/.dsh}/profiles/web/node_modules/dsh-plugin-chatgpt-siwc/package.json"
+      manifest="''${DSH_HOME:-$HOME/.dsh}/profiles/web/node_modules/dsh-plugin-chatgpt-siwc/package.json"
       if [ -f "$manifest" ] && node -e '
         const p = require(process.argv[1]);
         process.exit(p.name === process.argv[2] && p.version === process.argv[3] ? 0 : 1);
