@@ -119,5 +119,5 @@
     waterfox.legacyPackages.${pkgs.stdenv.hostPlatform.system}.waterfox-bin
   ];
 
-  system.stateVersion = "26.05";
+  system.stateVersion = "26.11";
 }
