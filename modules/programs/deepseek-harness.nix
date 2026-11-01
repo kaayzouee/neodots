@@ -6,7 +6,11 @@
 let
   installer = pkgs.writeShellApplication {
     name = "neodots-install-dsh-siwc";
-    runtimeInputs = [ pkgs.deepseek-harness pkgs.nodejs_24 pkgs.pnpm_11 ];
+    runtimeInputs = [
+      pkgs.deepseek-harness
+      pkgs.nodejs_24
+      pkgs.pnpm_11
+    ];
     text = ''
       set -euo pipefail
       manifest="''${DSH_HOME:-$HOME/.dsh}/profiles/web/node_modules/dsh-plugin-chatgpt-siwc/package.json"
@@ -24,8 +28,12 @@ let
       ' "$manifest" "dsh-plugin-chatgpt-siwc" "0.9.7"
     '';
   };
-in {
-  home.packages = [ pkgs.deepseek-harness installer ];
+in
+{
+  home.packages = [
+    pkgs.deepseek-harness
+    installer
+  ];
 
   # Provision outside NixOS rebuild, without running arbitrary npm lifecycle scripts.
   systemd.user.services.neodots-dsh-siwc = {
