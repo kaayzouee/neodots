@@ -55,6 +55,7 @@ in
     ../../modules/programs/tmux.nix
     ../../modules/programs/nano.nix
     ../../modules/programs/fastfetch.nix
+    ../../modules/programs/deepseek-harness.nix
   ]
   ++ lib.optional neodots.personal.enable ../../modules/personal/git.nix;
 
