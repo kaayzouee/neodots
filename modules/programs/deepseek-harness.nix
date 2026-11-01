@@ -29,7 +29,8 @@ let
     { name = "@wenaixi/dsh-ponytail"; version = "5.6.2"; source = "@wenaixi/dsh-ponytail@5.6.2"; }
     { name = "dsh-ghidra"; version = "0.11.4"; source = "dsh-ghidra@0.11.4"; }
     { name = "dsh-nix-dev-shell"; version = "0.3.0"; source = "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56"; }
-    { name = "@dsh-lsp-packs/dsh-lsp-java"; version = "0.1.0"; source = "github:988hj7tczd-oss/dsh-lsp-packs#258bb6409c504fa1eed20b6f70d13009522ca0ce&path:/dsh-lsp-java"; }
+    # Intentionally excluded: Java LSP 0.1.0 requires DSH < 0.2.0 and is
+    # rejected by our pinned DSH 0.2.1-rc.3. Do not bypass allow-version.
     { name = "dsh-github-ci"; version = "1.0.0"; source = "dsh-github-ci@1.0.0"; }
   ];
   installer = pkgs.writeShellApplication {
@@ -69,7 +70,6 @@ let
       install_plugin "@wenaixi/dsh-ponytail" "5.6.2" "@wenaixi/dsh-ponytail@5.6.2"
       install_plugin "dsh-ghidra" "0.11.4" "dsh-ghidra@0.11.4"
       install_plugin "dsh-nix-dev-shell" "0.3.0" "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56"
-      install_plugin "@dsh-lsp-packs/dsh-lsp-java" "0.1.0" "github:988hj7tczd-oss/dsh-lsp-packs#258bb6409c504fa1eed20b6f70d13009522ca0ce&path:/dsh-lsp-java"
       install_plugin "dsh-github-ci" "1.0.0" "dsh-github-ci@1.0.0"
     '';
   };
