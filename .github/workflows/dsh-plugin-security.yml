@@ -76,10 +76,15 @@ jobs:
           mkdir /tmp/source
           git -C /tmp/source init -q
           git -C /tmp/source remote add origin "https://github.com/$REPO.git"
-          git -C /tmp/source fetch --depth=1 origin "$REV"
-          test "$(git -C /tmp/source rev-parse FETCH_HEAD)" = "$REV"
-          git -C /tmp/source checkout -q --detach FETCH_HEAD
-          test -f "/tmp/source/$SUBDIR/package.json"
+          git -C /tmp/source fetch --depth=1 origin HEAD
+          if ! git -C /tmp/source cat-file -e "$REV^{commit}" 2>/dev/null; then
+            # Some GitHub repos reject a shallow fetch of an arbitrary commit SHA.
+            # Fetch full advertised history and verify the pinned object locally.
+            git -C /tmp/source fetch --unshallow origin || git -C /tmp/source fetch origin
+          fi
+          git -C /tmp/source cat-file -e "$REV^{commit}"
+          git -C /tmp/source checkout -q --detach "$REV"
+                    test -f "/tmp/source/$SUBDIR/package.json"
           mkdir /tmp/plugin-audit
           cp "/tmp/source/$SUBDIR/package.json" /tmp/plugin-audit/
           # Preserve existing package lock when present; never run prepare scripts.
