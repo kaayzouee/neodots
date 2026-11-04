@@ -29,15 +29,40 @@ Since 2025 the owner reports that NixOS installation media and installed systems
 
 On 2026-11-04, the owner reports wlp98s0 at 192.168.2.6, gateway and DHCP/DNS 192.168.2.253, and DHCP-advertised IPv6 DNS fe80::e660:4dff:fecc:8847%wlp98s0. IPv4 and IPv6 gateway neighbor MAC addresses matched. This supports a common gateway/network device, **not** a particular manufacturer, model, firmware or DNS proxy. Public IPv4 and gateway ping, public UDP DNS, local TCP DNS, and current static DNS worked. These are time-limited observations, not proof of historical connectivity.
 
-## Repository history — earliest verifiable evidence
+## Historical configuration sources and timeline
+
+The owner reports using `networking.nameservers = [ "1.1.1.1" "8.8.8.8" ];` in the predecessor NixOS configuration dating to 2025. This is owner-provided evidence, not an independently verified copy of that file. Unauthenticated requests to [the predecessor repository](https://github.com/kaayzouee/nixos-dotfiles) returned 404; this does not distinguish private, renamed, removed, or nonexistent. GitHub CLI had no configured authentication (`gh api repos/kaayzouee/nixos-dotfiles` exited 4), and a local path search found no predecessor checkout. The remaining 2025 configuration, revision and actual resolver ownership are unavailable pending an authorized copy. The October 2026 finding below is scoped **only to Neodots**: it is not the first known use of explicit public DNS across the owner's NixOS configurations.
+
+## Repository history — earliest verifiable Neodots evidence
 
 The parentless root commit `cb50545acaa4b7710394ec40fe44c67d8949fa87` (2026-09-24, author timezone +07) already contained **commented-out** static `1.1.1.1`/`8.8.8.8` text. It is not evidence that it was active then or establishes when it first worked. The active root configuration used NetworkManager `dns=none`, disabled resolved/resolvconf, pointed the resolver at localhost, and enabled Stubby with encrypted Cloudflare/Google upstreams. The same root commit already included the Proton VPN package; package presence does not demonstrate use or DNS routing.
 
 Commit `76e609bd64c6879452e59ee7167cdf4c916ab845` on 2026-09-26 added interface-specific DHCP; `466a5201a94adb63fb250a0806b752432acb53fa` later that day removed it and disabled global dhcpcd/useDHCP, citing competing clients. `96e506adc705ef569a6e30f9a708fcdee4769f60` on 2026-10-09 moved the package declaration while retaining Proton VPN. `eec62cd52010a749b058feebbfb1a4530d8207c4` on 2026-10-22 changed nixpkgs from 26.05 to unstable. The first verified **active** static public resolver in the available first-parent history is `3771549bc28838215979068019723d455a839521` (2026-10-29 +07), which disabled Stubby and replaced localhost with public nameservers. Its restoration comment is not independent proof of the 2025 state. The repository is not shallow, but its root cannot establish unpublished earlier history; the original failure, NixOS revision, DNS ownership and VPN use remain unrecorded.
 
+## DNS-management ownership comparison
+
+| Property | Predecessor circa 2025 | Current Neodots |
+|---|---|---|
+| Declared nameservers | Owner reports `1.1.1.1`, `8.8.8.8` through `networking.nameservers` | Static file: `1.1.1.1`, `8.8.8.8` |
+| DNS manager and actual file owner | Unknown; original files and runtime state unavailable | NixOS `environment.etc`, store-backed file |
+| NetworkManager DNS mode | Unknown | `none` |
+| DHCP-provided DNS | Precedence and use unknown | Discovered by NM, not installed into active resolver file |
+| systemd-resolved / resolvconf | Unknown | Both disabled |
+| Faulty DHCP DNS | Historical behavior unverified | Bypassed by static file, subject to routing and applications using their own resolver |
+
+An explicit `networking.nameservers` declaration alone does not prove which server a historical application actually used. Its effects depend on the pinned NixOS modules, DNS manager, network profiles, resolver state and application; recover these before making a historical attribution.
+
+### Version-specific nameserver precedence
+
+The historical pin is unavailable. As a **source-only approximation**, NixOS 25.11 revision [`abaa3ca1c9f4d3e7fae9576e4495bd64e10b46a0`](https://github.com/NixOS/nixpkgs/commit/abaa3ca1c9f4d3e7fae9576e4495bd64e10b46a0), dated 2025-12-31, provides a concrete 2025 comparison, not evidence of the owner's version. Its [scripted networking module](https://github.com/NixOS/nixpkgs/blob/abaa3ca1c9f4d3e7fae9576e4495bd64e10b46a0/nixos/modules/tasks/network-interfaces-scripted.nix) contributes declared nameservers through `resolvconf -m 1 -a static` only when resolvconf is enabled and networkd is not used. This is an openresolv contribution, not an unconditional replacement of DHCP DNS. [openresolv ordering](https://github.com/NetworkConfiguration/openresolv/blob/v3.17.0/resolvconf.8.in) also depends on key order, VPN/dynamic order, metrics and exclusive/private/local settings: a metric 0 contribution can precede metric 1. Inspect `resolvconf -l` and `resolvconf -i` at runtime; DHCP DNS can coexist or take precedence depending on the configuration. The [25.11 NetworkManager module](https://github.com/NixOS/nixpkgs/blob/abaa3ca1c9f4d3e7fae9576e4495bd64e10b46a0/nixos/modules/services/networking/networkmanager.nix) defaults to `dns=default`, internal DHCP and `rc-manager=resolvconf` when enabled, otherwise unmanaged. `useDHCP=false` does not disable NetworkManager's DHCP. With [systemd-resolved](https://github.com/NixOS/nixpkgs/blob/abaa3ca1c9f4d3e7fae9576e4495bd64e10b46a0/nixos/modules/system/boot/resolved.nix), declared nameservers feed global resolved DNS and NetworkManager integrates differently. Actual 2025 settings, profile priorities, other services and runtime ordering remain unknown.
+
+At that same 2025 source revision, [resolvconf's `dnsExtensionMechanism` option](https://github.com/NixOS/nixpkgs/blob/abaa3ca1c9f4d3e7fae9576e4495bd64e10b46a0/nixos/modules/config/resolvconf.nix) defaults to true and contributes `options edns0` when resolvconf manages the file. The current lock retains that default. This makes EDNS use by glibc plausible in such a configuration, but does not establish the historical effective setting.
+
+An offline evaluation of the **current** lock (`1d060086d60cb76a40cf37109f979d88a5bd6396`, not 2025) confirms that NM plus declared nameservers generates a static resolvconf contribution; with `dns=none`, resolvconf disabled and a separately declared static file, `networking.nameservers` does not rewrite that file. Setting `system.stateVersion = "25.11"` in this evaluation does not select 25.11 modules. Evaluation proves neither actual DHCP precedence nor application packets.
+
 ## Current resolver ownership — confirmed read-only
 
-Working tree, including pre-existing staged and unstaged edits, was evaluated, not reset. Its nixpkgs pin is `1d060086d60cb76a40cf37109f979d88a5bd6396`; live system reports `26.11.20261103.1d06008`, NetworkManager 1.58.1, glibc 2.44, systemd 262. Owner's dig was BIND 9.20.30. `system.stateVersion = 26.11` is a compatibility setting, not the package revision. The working lock differs from HEAD. Offline evaluation reports NM enabled, `dns=none`, `useDHCP=false`, dhcpcd disabled, resolved/resolvconf/Stubby disabled, `networking.nameservers=[]`, and the expected exact resolver text. The [network module](../../modules/system/networking.nix) owns the explicit definitions; module-option metadata names that module for NM DNS, resolved and Stubby. Evaluating the effective values succeeded; it does not prove every profile's runtime behavior or that the current checkout is identical to the booted generation.
+In the prior investigation, the working tree including then-existing staged and unstaged edits was evaluated, not reset. Its nixpkgs pin was `1d060086d60cb76a40cf37109f979d88a5bd6396`; live system reports `26.11.20261103.1d06008`, NetworkManager 1.58.1, glibc 2.44, systemd 262. Owner's dig was BIND 9.20.30. `system.stateVersion = 26.11` is a compatibility setting, not the package revision. At that earlier review the working lock differed from its then-HEAD; the present checkout at `0456780` records this pin. Offline evaluation reports NM enabled, `dns=none`, `useDHCP=false`, dhcpcd disabled, resolved/resolvconf/Stubby disabled, `networking.nameservers=[]`, and the expected exact resolver text. The [network module](../../modules/system/networking.nix) owns the explicit definitions; module-option metadata names that module for NM DNS, resolved and Stubby. Evaluating the effective values succeeded; it does not prove every profile's runtime behavior or that the current checkout is identical to the booted generation.
 
 ```text
 connection -> NetworkManager (live: DHCP client internal)
@@ -94,7 +119,7 @@ dig +noedns @192.168.2.253 probe-1793800557-c.example.com A +time=5 +tries=1
 dig +tcp @192.168.2.253 probe-1793800613.example.com A +time=5 +tries=1
 ```
 
-Expected: a matching DNS response within the deadline for each valid request, whether positive or a valid negative response. Reported actual: the first two timed out, the non-EDNS UDP and EDNS TCP requests returned responses. Different names and the TCP retry of a name already queried introduce cache and ordering confounds. The synthetic loopback fixture accompanying the probe tests implementation, not the real gateway defect; no isolated defect reproduction has yet been established.
+Expected: a matching DNS response within the deadline for each valid request, whether positive or a valid negative response. Reported actual: the first two timed out, the non-EDNS UDP and EDNS TCP requests returned responses. Different names and the TCP retry of a name already queried introduce cache and ordering confounds. The synthetic test below reproduces an EDNS-drop mechanism, not the actual gateway implementation or proof of the historical incident.
 
 ### Supplied packet timeline
 
@@ -104,17 +129,49 @@ At 20:49:19.791732 an EDNS UDP query ID 62873 was sent; at 20:49:22.807748 an ED
 
 **Confirmed from supplied client-side observations:** some gateway-directed, EDNS-enabled UDP requests for apparently uncached names exceeded the client's wait while other local non-EDNS UDP and TCP requests succeeded. **Likely:** the gateway forwarding path interacts poorly with those requests or their timing. **Unverified:** whether the client, local gateway, another proxy, upstream resolver, return path or an interaction is responsible; which EDNS feature matters; whether there is a standards violation; why TCP succeeds or warm names are fast. Client capture alone cannot distinguish a forward failure from upstream delay, response loss, gateway relay failure, or client rejection. COOKIE is **ruled out as the sole necessary trigger in the reported comparison**, not ruled out as a contributing factor. A gateway-side capture on both sides plus logs is required to isolate the failing operation.
 
+## Isolated QEMU reproduction and application behavior
+
+The opt-in [QEMU test](../../tests/dns-qemu.nix) boots a disposable fixture and NixOS clients on a test-driver private switch, with the QEMU user-mode network interface removed. dnsmasq advertises `198.51.100.1`; a Python server responds only for `fixture.test` and never forwards. A second server at `198.51.100.2` represents an independent static resolver, not the actual public services. The client importing the production module overrides only its resolver-file content inside the VM with this synthetic address. The `legacy-nameservers-only` reconstruction adds the owner-reported public addresses plus NetworkManager, an automatic Ethernet profile, `useDHCP=false`, and test-framework interface settings. These added settings and the 2026 package pin are **not verified 2025 settings**. No guest uses personal disks, secrets or physical interfaces.
+
+Diagnostic and five-VM assertion runs on Nixpkgs `1d060086d60cb76a40cf37109f979d88a5bd6396`, NetworkManager 1.58.1, openresolv 3.17.4, glibc 2.44, systemd 262 and BIND 9.20.30 produced the following. The DNS fixture decodes received DNS wire messages and logs source, transport, type, EDNS, COOKIE, timing and result; this is fixture-side application logging, **not an independent pcap**.
+
+| Configuration / controlled condition | Observed result |
+|---|---|
+| Minimal historical-style reconstruction, healthy DHCP DNS | `/etc/resolv.conf` listed `198.51.100.1`, then `1.1.1.1`, then `8.8.8.8`, with `options edns0`; NSS queried the DHCP server and got the synthetic answer. The public addresses were configured but had no external network path. |
+| Standard NM, healthy DHCP DNS | DHCP-advertised server appeared in the resolver file and received application queries. |
+| Standard NM, EDNS UDP drop | Direct `dig` with EDNS timed out; non-EDNS UDP and EDNS TCP succeeded. `getent ahostsv4` failed with status 13. Fixture logs show application A and AAAA UDP queries with EDNS payload 1200 and no COOKIE, dropped and retried. |
+| DHCP DNS completely unavailable | DNS lookups failed; `curl` by synthetic hostname timed out, while HTTP by numeric `198.51.100.1` returned 200. A separately configured static resolver still answered. |
+| Current-policy analogue | NM learned `.1`, while the file selected synthetic `.2`; the fixture at `.2` received NSS queries even while `.1` was unavailable. This tests ownership with substituted addresses, not reachability of the real public resolvers. |
+| systemd-resolved, healthy DNS | The file pointed to `127.0.0.53`; Python `socket.getaddrinfo` succeeded, and the DHCP fixture received the query. Faulty-DNS fallback under resolved was not tested. |
+| Non-NixOS distribution / IPv6 transport | Not tested. No pinned non-NixOS image was found locally; no comparison or IPv6-link-local transport claim is made. AAAA query type over IPv4 is not IPv6 transport. |
+
+The test did not independently capture packets with tcpdump, test `getaddrinfo` failure through resolved, or establish the actual router's fallback behavior. Its fixture log identifies received DNS packets and destination via the specific bound endpoint, but is not an independent network capture. The full 2025 release, DHCP setup, NSS settings and service topology remain unreconstructed.
+
+For example, one diagnostic run logged `nss.fixture.test` from `198.51.100.129`: UDP A ID 20381 and AAAA ID 45, EDNS size 1200 without COOKIE, both dropped at fixture monotonic time 67.785 s, retried about 5 seconds later; A ID 5058 was also retried. Exact IDs and times vary. This demonstrates that **this** configuration can turn an EDNS-specific DNS transport problem into an ordinary application failure. It does not prove the real gateway would fail the same application packets or that its delay and cache mechanisms match the synthetic drop.
+
+Run from the repository root:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 tests/dns/selftest.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/dns/fixtures/selftest.py
+nix build --offline --no-write-lock-file --no-link -L 'path:.#dns-qemu'
+```
+
+The `path:` flake includes untracked working files. Run only under a Linux Nix builder with sandbox and private network namespace enabled: the upstream test driver attempts `vde_plug2tap` for each VLAN, so an unsandboxed privileged or interactive driver could create a host TAP. The test was built with `nix config show sandbox` reporting `true`; no physical interface was attached. VM tests require a suitable QEMU builder; missing KVM or inputs means skip/failure, never pass. `--offline` does not prevent a missing fixed-output source from being fetched by a builder: one such dependency was fetched during preparation. The test guest network remained isolated. Fixture documentation describes healthy, EDNS-drop, first-query-failure, NXDOMAIN and REFUSED modes. First-query state is synthetic and does not establish a router cache. No production DNS, Wi-Fi, DHCP or router setting was modified.
+
 ## Hypothesis register
 
-| Hypothesis | Status | Evidence and discriminating test |
+| ID and hypothesis | Status / confidence | Supporting and contradicting evidence; discriminating test |
 |---|---|---|
-| H1 gateway EDNS-over-UDP forwarding defect | Likely, not isolated | Observed comparison; correlate same-name controlled queries and both gateway interfaces/upstream transactions, IDs and timing. |
-| H2 cache or upstream resolution delay | Unverified | TTL/timing consistent with cache; use authorized known cache state, unique names, repeats and upstream logs. |
-| H3 specific EDNS option/size/DO defect | Unverified | No-COOKIE still timed out; isolate OPT, COOKIE, buffer, DO and packet bytes; repeat and control cache/order. |
-| H4 NixOS resolver-management conflict | Unverified | Static override historically helped; compare evaluated ownership and actual selected DNS before/after in disposable environments. No present conflict established. |
-| H5 distribution-specific fallback | Unverified | Other distributions reportedly worked; compare matched clients and packet traces at the same gateway and time. |
-| H6 IPv6 preference/routing | Unverified | Advertised link-local resolver and prior reported timeout; test scoped endpoint and A/AAAA application traffic separately. |
-| H7 multiple unrelated failures | Unverified | Different networks/years allow multiple causes; reproduce and isolate more than one event. |
+| H1 Gateway path mishandles EDNS over UDP | Likely / moderate for association, low for component | Owner reports EDNS timeouts, non-EDNS and TCP answers; names and order differed, and captures do not isolate gateway versus upstream. Controlled same-name comparisons and authorized paired ingress/egress capture required. |
+| H2 Upstream stalls on cold queries | Unverified / low | Reported fast repeat answers are consistent with caching; cache location/state and upstream transactions are unknown. Controlled cache-state and upstream logs required. |
+| H3 NetworkManager selects unexpected DNS | Unverified / low historically | A connected interface can learn DHCP DNS; no historical effective config or packet destination exists. Inspect historical profile and runtime destination. |
+| H4 `networking.nameservers` does not provide intended effective DNS | Reproduced / high for this reconstruction; unverified historically | The controlled guest placed DHCP DNS before both declared public servers and sent queries to DHCP DNS. Other service/profile settings can change order; the actual 2025 modules and effective order are unknown. Recover the historical pin and runtime state. |
+| H5 resolvconf or resolved changes ownership | Unverified / low historically | Both can manage DNS differently; neither is active in current static policy. Recover original settings and compare actual file ownership. |
+| H6 IPv6 resolver selection causes timeout | Unverified / low | A link-local timeout was reported; scope, IPv6 route and independent transport tests were not established. Test scoped transport and A versus AAAA separately. |
+| H7 glibc retry/fallback differs across distributions | Unverified / low | Other distributions reportedly worked, but no matched captures or exact software versions exist. Compare resolver implementations with the same fixture and packet traces. |
+| H8 Multiple networking services interfere | Unverified / low historically | Repository history mentions competing DHCP clients in 2026; that is not proof of a 2025 conflict. Recover active-service and lease logs. |
+| H9 Historical and current problems are independent | Unverified / low | Multiple networks and years allow it; no matched historical packets connect or separate them. Recover a failed historical setup and compare controlled traces. |
 
 ## Safe reproduction and comparison design
 
@@ -128,10 +185,25 @@ For client comparisons prepare disposable NixOS instances using (1) that revisio
 
 * [NetworkManager DNS and rc-manager documentation](https://networkmanager.dev/docs/api/latest/NetworkManager.conf.html) describes DNS management modes; the live NixOS-generated config above, not generic upstream autodetection, determines this host.
 * [NixOS 25.11 NM module](https://raw.githubusercontent.com/NixOS/nixpkgs/nixos-25.11/nixos/modules/services/networking/networkmanager.nix) is a version-specific example of resolver integration, not proof of the 2025 host's exact revision or defaults.
-* [glibc resolv.conf(5)](https://man7.org/linux/man-pages/man5/resolv.conf.5.html) documents nameserver ordering, `edns0`, timeout/attempts and A/AAAA parallelism and appliance-sensitive diagnostic options. One resolver timeout is not necessarily the entire application's lookup deadline. Current static file does not specify `edns0`; actual application traffic remains unmeasured.
+* [glibc resolv.conf(5)](https://man7.org/linux/man-pages/man5/resolv.conf.5.html) documents nameserver ordering, `edns0`, timeout/attempts and A/AAAA parallelism and appliance-sensitive diagnostic options. One resolver timeout is not necessarily the entire application's lookup deadline. The current static file does not specify `edns0`; real-gateway application traffic remains unmeasured. The isolated resolvconf-managed guests do set it and their application query behavior is recorded above.
 * [nixpkgs PR #569556](https://github.com/NixOS/nixpkgs/pull/569556), opened 2026-10-02, proposes making the resolved module's NetworkManager DNS assignment a default to avoid conflicting explicit assignments; open as inspected. The issue concerns configurations enabling resolved and assigning a different NM DNS mode. It is **not** evidence this host, with resolved disabled, hit that conflict, and cannot explain 2025 without evidence.
 * [dae issue #1158](https://github.com/daeuniverse/dae/issues/1158) reports in 2026 that dae 2.1.1 re-encodes compressed DNS replies into oversized responses for non-EDNS clients on a dnsmasq 2.93/OpenWrt setup; proposed fixes are discussed, not established here. This is a different failure direction and software stack; it illustrates why packet sizes and proxy behavior must be measured, not a diagnosis of this router.
 * [RFC 6891 EDNS](https://www.rfc-editor.org/rfc/rfc6891) and [RFC 7873 DNS cookies](https://www.rfc-editor.org/rfc/rfc7873) define protocol context. Establishing a violation requires the actual wire messages and appropriate protocol conditions.
+
+## Validation record
+
+Baseline Git revision was `0456780bc4ac9920f1fcb8df02b96560d53f4f0e`; tests used the modified working tree, locked Nixpkgs `1d060086d60cb76a40cf37109f979d88a5bd6396`, Nix 2.34.9, Python 3.13.16 and QEMU 11.1.2 on x86_64 with `/dev/kvm` available. The following are distinct from the owner-supplied gateway observations:
+
+| Command | Result and scope |
+|---|---|
+| `PYTHONDONTWRITEBYTECODE=1 python3 tests/dns/selftest.py` | PASS: 21 loopback diagnostic probes. |
+| `PYTHONDONTWRITEBYTECODE=1 python3 tests/dns/fixtures/selftest.py` | PASS: fixture modes and wire responses on loopback. |
+| `nix build --offline --no-write-lock-file --no-link -L .#checks.x86_64-linux.config-invariants` | PASS: policy assertions, not DNS connectivity. |
+| `PYTHONDONTWRITEBYTECODE=1 python3 tests/repository-policy.py` | PASS: repository policy. |
+| `nixfmt --check flake.nix tests/dns-qemu.nix` | PASS with Nixfmt 1.5.0. |
+| `git check-ignore -v -- tests/dns/__pycache__/diagnostic.cpython-313.pyc tests/dns/__pycache__/other.cpython-313.pyc tests/dns/other.pyc` | PASS: the cache-directory and bytecode patterns apply; `git ls-files '*__pycache__*' '*.pyc'` returns no tracked artifacts. |
+
+A preliminary four-VM assertion build passed in 83.36 s. A subsequent amended run failed because its shell exited early while capturing an expected nonzero `getent` status; that failed run is not counted as a pass. After correction, `nix build --offline --no-write-lock-file --no-link -L 'path:.#dns-qemu'` **passed** the five-VM KVM test in 100.96 s. A further build after formatting exited 0 using the existing result. The test exercised cookie and no-cookie EDNS timeouts, plain UDP and TCP success, NSS failure, resolved's healthy path, numeric HTTP and static-resolver independence. Fixture logs do not replace a historical packet trace. A non-NixOS image comparison was investigated but not run: a separate safe test-driver control path and authenticated pinned image are needed. This is a skip, not a pass.
 
 ## Outstanding answers and escalation
 

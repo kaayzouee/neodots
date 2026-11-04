@@ -280,6 +280,11 @@
       # ─────────────────────────── Formatter ────────────────────────────
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
 
+      # Explicit opt-in: this QEMU test is intentionally outside default checks.
+      packages.${machine.system}.dns-qemu = import ./tests/dns-qemu.nix {
+        pkgs = nixpkgs.legacyPackages.${machine.system};
+      };
+
       # ─────────────────────────── Checks ───────────────────────────────
       checks.${machine.system} =
         let

@@ -98,3 +98,27 @@ The test starts synthetic UDP and TCP DNS responders bound to IPv4 loopback on
 an ephemeral port, validates the wire variants and cold/warm pairing, and tests
 that missing authorization and an invalid target fail before probing. It makes
 no external network requests and does not exercise a real resolver or IPv6.
+
+## Isolated DNS fixture and QEMU test
+
+The [fixture](fixtures/README.md) never forwards DNS and has independently tested
+healthy, EDNS-UDP-drop and synthetic first-query-failure modes. Run its loopback
+self-test with `PYTHONDONTWRITEBYTECODE=1 python3 tests/dns/fixtures/selftest.py`.
+The explicitly invoked QEMU test uses disposable guests, a private virtual switch,
+synthetic addresses and no physical networking; it is not part of default CI:
+
+```sh
+nix build --offline --no-write-lock-file --no-link -L 'path:.#dns-qemu'
+```
+
+The `path:` reference includes new untracked test files in a working checkout.
+Run only on a builder with Nix's Linux sandbox enabled and a private network
+namespace. The NixOS test driver starts `vde_plug2tap` for every test VLAN; a
+privileged unsandboxed or interactive driver could create a host TAP, so do not
+run this test that way or attach the switch to a physical interface. The test
+here was built with `nix config show sandbox` reporting `true`.
+Nix may need available build inputs and KVM on the builder; lack of either is a
+skip or build error, not a pass. Nix fixed-output derivations can still fetch
+sources even with `--offline`; pre-provision inputs for a fully offline build.
+The guest network itself has no production-network interface. See the investigation
+report for actual tested scenarios, observed results and limitations.

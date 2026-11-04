@@ -27,6 +27,24 @@ from the still-unidentified forwarding-path fault. Retain the existing static
 plaintext IPv4 nameservers and firewall for now: they are the only locally
 observed working compatibility workaround, not proof of a general DNS fix.
 
+## Evidence and decision
+
+The 2025 predecessor's public nameserver declaration is owner-reported; its actual
+DNS manager, Nixpkgs revision and effective resolver order remain unavailable.
+The current gateway observations are EDNS-associated but do not identify the
+faulty hop or establish that ordinary historical application lookups failed for
+the same reason. An isolated synthetic fixture demonstrates configurable DNS
+failure modes; it is not the real gateway or a recreation of the 2025 system.
+On the tested NixOS pin, resolvconf enables `edns0` by default. A synthetic
+EDNS-dropping DHCP resolver can therefore break ordinary NSS lookups, whereas a
+separate synthetic static resolver avoids it. This makes the reported mechanism
+plausible, but does not attribute the historical incident or the gateway's internal
+failure. Disabling EDNS or changing DNS management is not a proven production fix:
+it can change DNSSEC, local-zone, VPN and captive-portal behavior.
+Accordingly **do not replace the working production policy** on this evidence.
+Request the predecessor source, lock/channel revision, imported modules and a
+sanitized resolver/network profile or packet capture from a failing event.
+
 ## Candidates, not recommendations to deploy
 
 | Candidate | Reliability, latency and maintenance | Compatibility and security |

@@ -28,3 +28,7 @@ secrets/*.plain.*
 /result-*
 .direnv/
 .envrc.local
+
+# Python bytecode and interpreter caches
+__pycache__/
+*.pyc
