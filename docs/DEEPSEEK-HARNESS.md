@@ -26,10 +26,11 @@ already-pinned `nixpkgs` flake input. The package is currently DSH
 `guest` receives the package or the SIWC plugin.
 
 The `neodots-dsh-plugins` user service provisions five compatible pinned DSH plugins
-into the `web` profile when their installed version is missing or different. The installer uses the DSH plugin manager,
-disables npm install scripts, and checks the resulting package version. It
-runs independently of the NixOS rebuild so a network outage cannot fail a
-system activation.
+into the `web` profile when their installed name/version or declared source differs.
+For npm packages it checks the exact saved version; for Git packages it checks the
+full commit source. The installer uses the DSH plugin manager, disables npm install
+scripts, and checks the resulting package version. It runs independently of the
+NixOS rebuild so a network outage cannot fail a system activation.
 
 To provision it again or inspect its failure:
 
@@ -88,13 +89,26 @@ reproducible Nix derivation.
 
 ## Daily security check
 
-`.github/workflows/dsh-plugin-security.yml` runs daily at **03:17 UTC**
-and on manual dispatch or relevant pull requests. It audits the six exact
-pinned package sources with `npm audit --audit-level=high`, excluding
-development dependencies, and retrieves GitHub sources by verified commit SHA
-without invoking their lifecycle scripts. It reports a known Java plugin
-compatibility mismatch. Scheduled workflow jobs require the workflow to be
-on the repository's default branch; GitHub Actions scheduling can be delayed.
+[The security workflow](../.github/workflows/dsh-plugin-security.yml) runs daily
+at **03:17 UTC** and on manual dispatch or relevant pull requests. Its Actions
+are pinned to reviewed commit IDs. It audits fresh dependency resolutions of the
+six exact pinned package sources with `npm audit --audit-level=high`, excluding
+development dependencies but retaining optional and peer dependency declarations.
+GitHub sources are retrieved by verified commit SHA without invoking their
+lifecycle scripts. This is **not** an audit of the installed profile lockfile;
+resolved peers can differ from those supplied by the running DSH host.
+It reports the known Java compatibility mismatch as a warning, not a failing gate.
+Scheduled jobs require the workflow to be on the repository's default branch;
+GitHub Actions scheduling can be delayed.
+
+The 2026-11-03 UTC audit of SIWC's fresh peer graph selected DSH peer packages
+`0.2.1-rc.5` and Zod `4.4.3`. It failed with six high-severity dependency entries
+from [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
+(Zod memory exhaustion; fixed in `4.6.6`), including propagated dependents—not six
+independent vulnerabilities. The other five source audits passed. This does not
+establish the versions or exploitability of the pinned DSH runtime closure.
+Keep the failure visible; review upstream constraints before changing pins or
+adding overrides. Ignoring peer dependencies hides this finding rather than fixing it.
 
 This is a dependency-advisory check, **not a full malware/security scan**.
 It does not exercise runtime code, prove absence of credential exfiltration,
@@ -102,4 +116,21 @@ or automatically assess new upstream versions. Findings are visible as
 failed GitHub Actions jobs. Do not enable arbitrary build scripts to fix
 Git-source installation failures without reviewing them.
 
-The Java LSP package is excluded from automatic installation after DSH rejected it at runtime. Its exact-version compatibility exemption is intentionally **not** enabled. Provisioning now continues to `dsh-github-ci`; GitHub CI still audits the Java LSP dependency declaration for security visibility. The web interface at port 3080 was already running on the user's machine, so another `dsh --profile web --no-open` process would fail with `EADDRINUSE`.
+The Java LSP package remains excluded after DSH rejected it at runtime. Its
+exact-version compatibility exemption is intentionally **not** enabled. Other
+plugins, including `dsh-github-ci`, are still provisioned. Do not start a second
+web server on a port already used by DSH.
+
+## Offline installer regression check
+
+```sh
+python3 tests/check-dsh-installer.py
+```
+
+[The check](../tests/check-dsh-installer.py) evaluates the module's installer text
+using a stub `writeShellApplication`, then runs it with a mock `dsh` and temporary
+`HOME`/`DSH_HOME`. It covers fresh installation, repeat-run idempotence, scoped npm
+and Git pins, name/version/source mismatches, missing manifests, and the default
+`HOME/.dsh` path. It requires Nix, Python 3, Bash and Node, but no network,
+credentials, real profile access, or activation. A pre-evaluated installer text
+file can be passed as its sole argument for sandboxed checks.

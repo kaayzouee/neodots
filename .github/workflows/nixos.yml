@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Build the synthetic CI NixOS configuration.
+#
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
 name: NixOS
 
 on:
@@ -35,34 +54,5 @@ jobs:
         with:
           install_url: https://releases.nixos.org/nix/nix-2.34.7/install
 
-      - name: Provide CI hardware configuration
-        run: |
-          cat > hardware-configuration.nix <<'EOF'
-          { modulesPath, ... }:
-          {
-            imports = [
-              (modulesPath + "/profiles/qemu-guest.nix")
-            ];
-
-            boot.initrd.availableKernelModules = [
-              "virtio_pci"
-              "virtio_scsi"
-              "ahci"
-              "sd_mod"
-            ];
-
-            fileSystems."/" = {
-              device = "/dev/vda2";
-              fsType = "btrfs";
-            };
-
-            fileSystems."/boot" = {
-              device = "/dev/vda1";
-              fsType = "vfat";
-              options = [ "fmask=0077" "dmask=0077" ];
-            };
-          }
-          EOF
-
       - name: Build NixOS system
-        run: nix build .#nixosConfigurations.nixos.config.system.build.toplevel --print-build-logs
+        run: nix build .#nixosConfigurations.ci.config.system.build.toplevel --print-build-logs

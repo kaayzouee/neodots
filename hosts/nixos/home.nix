@@ -62,8 +62,21 @@ in
   home.username = neodots.username;
   home.homeDirectory = neodots.homeDirectory;
 
-  sops.age.keyFile = lib.mkIf neodots.personal.enable (
-    "${config.home.homeDirectory}/.config/sops/age/keys.txt"
+  sops.age = lib.mkIf neodots.personal.enable {
+    keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
+    # A new key cannot decrypt secrets encrypted only for a lost old key.
+    generateKey = false;
+  };
+
+  systemd.user.services.sops-nix.Service.ExecStartPre = lib.mkIf neodots.personal.enable (
+    let
+      checker = pkgs.writeShellApplication {
+        name = "check-sops-age-key";
+        runtimeInputs = [ pkgs.coreutils ];
+        text = builtins.readFile ../../modules/personal/check-age-key.sh;
+      };
+    in
+    "${checker}/bin/check-sops-age-key ${lib.escapeShellArg config.sops.age.keyFile}"
   );
 
   programs.home-manager.enable = true;

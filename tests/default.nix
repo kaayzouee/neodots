@@ -27,6 +27,8 @@ let
 
   users = cfg.users.users;
   username = cfg.neodots.username;
+  riverUser = cfg.neodots.desktop.river.user;
+  riverHome = cfg.home-manager.users.${riverUser};
 
   normalUsers = lib.filterAttrs (_: u: u.isNormalUser) users;
 
@@ -154,22 +156,109 @@ let
     # -- river user ------------------------------------------------------
     {
       name = "river has no declared password";
-      ok = users.river.hashedPassword == null && users.river.password == null;
+      ok = users.${riverUser}.hashedPassword == null && users.${riverUser}.password == null;
     }
     {
       name = "river Home Manager home matches the system user's home";
-      ok = hmHome "river" == users.river.home;
+      ok = hmHome riverUser == users.${riverUser}.home;
     }
     {
       name = "river session is registered with the display manager";
       ok = providesSession "river";
     }
     {
-      name = "quickshell watcher is skipped when the live checkout is missing";
+      name = "production Quickshell deploys immutable sources without a live checkout watcher";
       ok =
-        (cfg.home-manager.users.river.systemd.user.services.neodots-quickshell-watch.Unit.ConditionPathExists
-          or null
-        ) != null;
+        riverHome.neodots.quickshell.developmentSource == null
+        && riverHome.xdg.configFile."quickshell/neodots".source != null
+        && !(riverHome.systemd.user.services ? neodots-quickshell-watch);
+    }
+    {
+      name = "Quickshell is supervised and bound to the River session";
+      ok =
+        riverHome.systemd.user.services.neodots-quickshell.Service.Restart == "on-failure"
+        && lib.elem "neodots-river-session.target" riverHome.systemd.user.services.neodots-quickshell.Unit.PartOf
+        && lib.elem "graphical-session.target" riverHome.systemd.user.targets.neodots-river-session.Unit.PartOf;
+    }
+    {
+      name = "primary and River retain intentional administrative capabilities by default";
+      ok =
+        lib.all
+          (
+            name:
+            lib.all (g: lib.elem g users.${name}.extraGroups) [
+              "wheel"
+              "networkmanager"
+              "libvirtd"
+              "uinput"
+            ]
+          )
+          [
+            username
+            riverUser
+          ];
+    }
+    {
+      name = "River capabilities can be independently disabled without affecting the primary";
+      ok =
+        let
+          restricted = base.extendModules {
+            modules = [
+              {
+                neodots.desktop.river.permissions = {
+                  admin = false;
+                  virtualization = false;
+                  input = false;
+                  networkManagement = false;
+                };
+              }
+            ];
+          };
+        in
+        restricted.config.users.users.${riverUser}.extraGroups == [ ]
+        && restricted.config.users.users.${username}.extraGroups == users.${username}.extraGroups;
+    }
+    {
+      name = "River account can be renamed consistently across NixOS and Home Manager";
+      ok =
+        let
+          renamed = base.extendModules { modules = [ { neodots.desktop.river.user = "desktop-test"; } ]; };
+        in
+        renamed.config.users.users.desktop-test.home == "/home/desktop-test"
+        && renamed.config.home-manager.users.desktop-test.home.username == "desktop-test"
+        && !(renamed.config.users.users ? river);
+    }
+    {
+      name = "disabling River removes its account and Home Manager profile, not GNOME";
+      ok =
+        let
+          disabled = base.extendModules { modules = [ { neodots.desktop.river.enable = false; } ]; };
+        in
+        !(disabled.config.users.users ? ${riverUser})
+        && !(disabled.config.home-manager.users ? ${riverUser})
+        && disabled.config.services.desktopManager.gnome.enable;
+    }
+    {
+      name = "invalid Quickshell development paths are rejected";
+      ok =
+        let
+          invalid = base.extendModules {
+            modules = [
+              {
+                home-manager.users.${riverUser}.neodots.quickshell.developmentSource = "relative/path";
+              }
+            ];
+          };
+        in
+        lib.any (
+          a: !a.assertion && lib.hasInfix "developmentSource" a.message
+        ) invalid.config.home-manager.users.${riverUser}.assertions;
+    }
+    {
+      name = "swaylock has password-authentication PAM integration";
+      ok =
+        cfg.security.pam.services ? swaylock
+        && lib.hasInfix "pam_unix.so" cfg.security.pam.services.swaylock.text;
     }
 
     # -- GNOME / Wayland --------------------------------------------------
@@ -189,7 +278,7 @@ let
       ok =
         cfg.programs.fish.generateCompletions == false
         && cfg.home-manager.users.${username}.programs.fish.generateCompletions == false
-        && cfg.home-manager.users.river.programs.fish.generateCompletions == false;
+        && cfg.home-manager.users.${riverUser}.programs.fish.generateCompletions == false;
     }
     {
       name = "XFCE and LightDM are not enabled";
@@ -268,6 +357,106 @@ let
         && !(lib.any (s: isRawNvmePath (s.device or null)) cfg.swapDevices);
     }
 
+    {
+      name = "incorrect EFI filesystem and raw NVMe devices are rejected";
+      ok =
+        let
+          invalid = base.extendModules {
+            modules = [
+              {
+                fileSystems."/boot".fsType = lib.mkForce "ext4";
+                fileSystems."/".device = lib.mkForce "/dev/nvme0n1p8";
+              }
+            ];
+          };
+        in
+        builtins.length (failedTagged "[hardware]" invalid) >= 2;
+    }
+    {
+      name = "missing explicit root device is rejected";
+      ok =
+        failedTagged "[hardware]" (
+          base.extendModules {
+            modules = [
+              {
+                fileSystems."/".device = lib.mkForce null;
+              }
+            ];
+          }
+        ) != [ ];
+    }
+    {
+      name = "volatile persistence backing filesystems are rejected";
+      ok =
+        failedPersistenceAssertions (
+          persistenceWithFs.extendModules {
+            modules = [
+              {
+                fileSystems."/persist".fsType = lib.mkForce "tmpfs";
+              }
+            ];
+          }
+        ) != [ ];
+    }
+
+    {
+      name = "synthetic hardware cannot pass production/non-VM assertions";
+      ok =
+        failedTagged "[hardware-fixture]" (
+          base.extendModules {
+            modules = [
+              {
+                neodots.vm.enable = lib.mkOverride 40 false;
+              }
+            ];
+          }
+        ) != [ ];
+    }
+    {
+      name = "only the primary and configured River accounts receive privileged memberships";
+      ok = lib.all (
+        name:
+        lib.elem name [
+          username
+          riverUser
+        ]
+        || lib.intersectLists privilegedGroups normalUsers.${name}.extraGroups == [ ]
+      ) (lib.attrNames normalUsers);
+    }
+
+    # -- secret recovery -------------------------------------------------
+    {
+      name = "personal persistence preserves the Home Manager age key directory privately";
+      ok =
+        let
+          personalPersistent = persistenceWithFs.extendModules {
+            modules = [ { neodots.personal.enable = lib.mkOverride 40 true; } ];
+          };
+          directories =
+            personalPersistent.config.environment.persistence."/persist".users.${username}.directories;
+        in
+        lib.any (d: d.directory == ".config/sops/age" && d.mode == "0700") directories;
+    }
+    {
+      name = "nonpersonal primary Home Manager has no secrets or age key";
+      ok =
+        let
+          nonpersonal = base.extendModules {
+            modules = [ { neodots.personal.enable = lib.mkForce false; } ];
+          };
+          hm = nonpersonal.config.home-manager.users.${username};
+        in
+        hm.sops.secrets == { } && hm.sops.templates == { } && hm.sops.age.keyFile == null;
+    }
+    {
+      name = "normal host has no VM-only initial passwords";
+      ok = users.${username}.initialPassword == null && users.${riverUser}.initialPassword == null;
+    }
+    {
+      name = "firewall is enabled and SSH is not exposed";
+      ok = cfg.networking.firewall.enable && !cfg.services.openssh.enable;
+    }
+
     # -- btrfs -----------------------------------------------------------
     {
       name = "btrfs tuning on an ext4 root is rejected at evaluation time";
@@ -315,11 +504,8 @@ let
 
     # -- networking ------------------------------------------------------
     {
-      name = "resolv.conf uses the configured public DNS servers";
-      ok =
-        lib.hasInfix "nameserver 1.1.1.1" resolvConf
-        && lib.hasInfix "nameserver 8.8.8.8" resolvConf
-        && !(lib.hasInfix "127.0.0.1" resolvConf);
+      name = "resolv.conf contains exactly the static public DNS policy";
+      ok = resolvConf == "nameserver 1.1.1.1\nnameserver 8.8.8.8\n";
     }
     {
       name = "Stubby, systemd-resolved and resolvconf are disabled";
@@ -328,7 +514,11 @@ let
     }
     {
       name = "NetworkManager leaves the static resolv.conf untouched";
-      ok = cfg.networking.networkmanager.dns == "none";
+      ok =
+        cfg.networking.networkmanager.enable
+        && cfg.networking.networkmanager.dns == "none"
+        && (cfg.networking.networkmanager.settings.main.dns or "none") == "none"
+        && (cfg.networking.networkmanager.settings.main."rc-manager" or "unmanaged") == "unmanaged";
     }
 
     # -- input method ----------------------------------------------------

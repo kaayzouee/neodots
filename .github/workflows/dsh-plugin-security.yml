@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Daily advisory checks for pinned DSH plugin sources.
+#
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
 name: DSH plugin security (daily)
 
 on:
@@ -37,7 +56,7 @@ jobs:
           - name: nix-dev-shell
             kind: github
             repo: running-grass/dsh-nix-dev-shell
-            rev: 90d39a724613d151838faac7972e3a06693df56
+            rev: 90d39a724613d151838faac7972e3a06693df56a
             subdir: "."
           - name: java-lsp
             kind: github
@@ -48,10 +67,10 @@ jobs:
             kind: npm
             source: dsh-github-ci@1.0.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "24"
       - name: Check pinned npm dependency graph (no lifecycle scripts)
@@ -63,7 +82,7 @@ jobs:
           mkdir -p /tmp/plugin-audit
           cd /tmp/plugin-audit
           printf '{"private":true,"name":"dsh-audit","version":"1.0.0"}\n' > package.json
-          npm install --package-lock-only --ignore-scripts --no-audit --save-exact --legacy-peer-deps "$SPEC"
+          npm install --package-lock-only --ignore-scripts --no-audit --save-exact --omit=dev "$SPEC"
           npm audit --audit-level=high --omit=dev
       - name: Retrieve exact Git commit without running its code
         if: matrix.kind == 'github'
@@ -84,32 +103,24 @@ jobs:
           fi
           git -C /tmp/source cat-file -e "$REV^{commit}"
           git -C /tmp/source checkout -q --detach "$REV"
-                    test -f "/tmp/source/$SUBDIR/package.json"
+          test -f "/tmp/source/$SUBDIR/package.json"
           mkdir /tmp/plugin-audit
           cp "/tmp/source/$SUBDIR/package.json" /tmp/plugin-audit/
-          # Preserve existing package lock when present; never run prepare scripts.
-          for lock in package-lock.json npm-shrinkwrap.json; do
-            if [ -f "/tmp/source/$SUBDIR/$lock" ]; then
-              cp "/tmp/source/$SUBDIR/$lock" /tmp/plugin-audit/
-            fi
-          done
       - name: Audit Git plugin declared runtime dependencies
         if: matrix.kind == 'github'
         run: |
           set -euo pipefail
           cd /tmp/plugin-audit
-          # Drop scripts and build-only dependencies to avoid arbitrary code execution.
+          # Resolve a fresh declaration graph, not the user's installed profile lock.
+          # Keep optional/peer runtime dependencies; never execute lifecycle scripts.
           node - <<'NODE'
           const fs = require('fs');
           const p = JSON.parse(fs.readFileSync('package.json'));
           delete p.scripts;
           delete p.devDependencies;
-          delete p.peerDependencies;
-          delete p.optionalDependencies;
           fs.writeFileSync('package.json', JSON.stringify(p));
           NODE
-          rm -f package-lock.json npm-shrinkwrap.json
-          npm install --package-lock-only --ignore-scripts --no-audit --legacy-peer-deps
+          npm install --package-lock-only --ignore-scripts --no-audit --omit=dev
           npm audit --audit-level=high --omit=dev
       - name: Check source against high-risk patterns
         if: matrix.kind == 'github'

@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Lint Quickshell QML with pinned tooling.
+#
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
 name: Quickshell
 
 on:
@@ -37,7 +56,7 @@ jobs:
 
       - name: Lint Quickshell configuration
         run: |
-          nix shell nixpkgs#quickshell nixpkgs#qt6.qtdeclarative -c bash -euo pipefail <<'EOF'
+          nix shell --no-write-lock-file --inputs-from . nixpkgs#quickshell nixpkgs#qt6.qtdeclarative -c bash -euo pipefail <<'EOF'
           qs_root="$(find "$(dirname "$(readlink -f "$(command -v qs)")")/.." -type d -path '*/lib/qt-6/qml/Quickshell' -print -quit)"
           qt_root="$(find "$(dirname "$(readlink -f "$(command -v qmllint)")")/.." -type d -path '*/lib/qt-6/qml/QtQuick' -print -quit)"
 

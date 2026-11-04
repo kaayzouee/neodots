@@ -34,6 +34,8 @@
   sops.secrets."git/signingkey" = { };
 
   sops.templates."git-identity.conf" = {
+    # Runtime-only include: never interpolate decrypted values during evaluation.
+    mode = "0400";
     content = ''
       [user]
         name  = ${config.sops.placeholder."git/name"}

@@ -118,8 +118,35 @@
 
   config.assertions = [
     {
-      assertion = config.neodots.username != "river";
-      message = "The Neodots primary user cannot be named river (reserved for the River session user).";
+      assertion = config.nixpkgs.hostPlatform.system == "x86_64-linux";
+      message = "[hardware] Neodots currently supports x86_64-linux only; custom desktop packages are not validated on other architectures.";
+    }
+    {
+      assertion =
+        (config.fileSystems."/".device or null) != null
+        && (config.fileSystems."/".fsType or "auto") != "auto";
+      message = "[hardware] Supply an explicit root filesystem device and type in your generated hardware module.";
+    }
+    {
+      assertion =
+        !config.boot.loader.systemd-boot.enable
+        || (
+          (config.fileSystems.${config.boot.loader.efi.efiSysMountPoint}.fsType or null) == "vfat"
+          && (config.fileSystems.${config.boot.loader.efi.efiSysMountPoint}.device or null) != null
+        );
+      message = "[hardware] systemd-boot requires a declared vfat EFI system partition at boot.loader.efi.efiSysMountPoint.";
+    }
+    {
+      assertion = lib.all (
+        fs: fs.device == null || builtins.match "/dev/nvme[0-9]+n[0-9]+p[0-9]+" fs.device == null
+      ) (lib.attrValues config.fileSystems);
+      message = "[hardware] Use stable filesystem UUIDs or labels, not raw NVMe partition paths.";
+    }
+    {
+      assertion =
+        !(config.neodots.desktop.river.enable or false)
+        || config.neodots.username != config.neodots.desktop.river.user;
+      message = "The Neodots primary user must be separate from the enabled River session user.";
     }
     {
       assertion = config.neodots.username != "guest";

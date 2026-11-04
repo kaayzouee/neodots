@@ -61,8 +61,12 @@ in
 
         # Passwords are otherwise unset, which would make the VM unusable.
         # This only exists in the throwaway VM.
-        users.users.${config.neodots.username}.initialPassword = "neodots";
-        users.users.river.initialPassword = "neodots";
+        users.users = {
+          ${config.neodots.username}.initialPassword = "neodots";
+        }
+        // lib.optionalAttrs config.neodots.desktop.river.enable {
+          ${config.neodots.desktop.river.user}.initialPassword = "neodots";
+        };
 
         virtualisation = {
           memorySize = 4096;

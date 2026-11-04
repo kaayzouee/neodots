@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Neodots - NetworkManager with a local DNS-over-TLS resolver (stubby) and
-#          firewall.
+# Neodots - NetworkManager with static plaintext public DNS and a firewall.
 #
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
@@ -18,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-{ pkgs, ... }:
+{ ... }:
 
 {
   networking.networkmanager = {

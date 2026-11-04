@@ -119,8 +119,6 @@ let
 
   custom = [
     (pkgs.callPackage ../../packages/shg { })
-    (pkgs.callPackage ../../packages/river { })
-    (pkgs.callPackage ../../packages/kwm { })
   ];
 in
 {

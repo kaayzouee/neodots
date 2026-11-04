@@ -27,14 +27,14 @@
 
 {
   imports = [
-    # Machine-specific generated hardware configuration.
-    ../../hardware-configuration.nix
+    # Hardware is selected by flake.nix, independently of reusable modules.
 
     # -------------------------------------------------------------------------
     # Desktop
     # -------------------------------------------------------------------------
 
     ../../modules/desktop/desktop-gnome.nix
+    ../../modules/desktop/river
 
     # -------------------------------------------------------------------------
     # Hardware
@@ -75,13 +75,6 @@
   ];
 
   networking.hostName = config.neodots.hostname;
-
-  # Include River in GDM's generated Wayland session directory.
-  # Installing a compositor in environment.systemPackages alone does not
-  # register its .desktop file with the session chooser.
-  services.displayManager.sessionPackages = [
-    (pkgs.callPackage ../../packages/river { })
-  ];
 
   # ---------------------------------------------------------------------------
   # Nix

@@ -70,71 +70,97 @@
     let
       machine = import ./hosts/nixos/machine.nix;
       mutterNoXWaylandOverlay = import ./modules/desktop/mutter-no-xwayland-overlay.nix;
+      mkHost =
+        {
+          hardwareModule,
+          extraModules ? [ ],
+        }:
+        nixpkgs.lib.nixosSystem {
+          system = machine.system;
+
+          specialArgs = {
+            inherit waterfox;
+          };
+
+          modules = [
+            hardwareModule
+            ./hosts/nixos
+
+            {
+              nixpkgs.hostPlatform = machine.system;
+              nixpkgs.overlays = [ mutterNoXWaylandOverlay ];
+            }
+
+            {
+              neodots = machine.neodots;
+            }
+
+            catppuccin.nixosModules.catppuccin
+            home-manager.nixosModules.home-manager
+            sops-nix.nixosModules.sops
+            impermanence.nixosModules.impermanence
+
+            (
+              { config, ... }:
+              {
+                home-manager.useGlobalPkgs = true;
+
+                home-manager.backupFileExtension = "backup";
+
+                home-manager.extraSpecialArgs = {
+                  inherit waterfox spicetify-nix;
+                  neodots = config.neodots;
+                };
+
+                home-manager.sharedModules = [
+                  sops-nix.homeManagerModules.sops
+                ];
+
+                home-manager.users = {
+                  ${config.neodots.username} = {
+                    imports = [
+                      ./hosts/nixos/home.nix
+                      catppuccin.homeModules.catppuccin
+                      spicetify-nix.homeManagerModules.spicetify
+                    ];
+                  };
+                  guest = {
+                    imports = [ ./hosts/nixos/guest-home.nix ];
+                  };
+                }
+                // nixpkgs.lib.optionalAttrs config.neodots.desktop.river.enable {
+                  ${config.neodots.desktop.river.user} = {
+                    imports = [
+                      ./hosts/nixos/river-home.nix
+                      catppuccin.homeModules.catppuccin
+                    ];
+                  };
+                };
+              }
+            )
+          ]
+          ++ extraModules;
+        };
     in
     {
-      # ─────────────────────────── NixOS host ───────────────────────────
-      nixosConfigurations.${machine.neodots.hostname} = nixpkgs.lib.nixosSystem {
-        system = machine.system;
-
-        specialArgs = {
-          inherit waterfox;
+      # Production hardware is selected explicitly; CI never overwrites it.
+      nixosConfigurations = {
+        ${machine.neodots.hostname} = mkHost {
+          hardwareModule = machine.hardwareModule;
         };
-
-        modules = [
-          ./hosts/nixos
-
-          {
-            nixpkgs.overlays = [ mutterNoXWaylandOverlay ];
-          }
-
-          {
-            neodots = machine.neodots;
-          }
-
-          catppuccin.nixosModules.catppuccin
-          home-manager.nixosModules.home-manager
-          sops-nix.nixosModules.sops
-          impermanence.nixosModules.impermanence
-
-          (
-            { config, ... }:
+        ci = mkHost {
+          hardwareModule = ./tests/fixtures/hardware-configuration.nix;
+          extraModules = [
             {
-              home-manager.useGlobalPkgs = true;
-
-              home-manager.backupFileExtension = "backup";
-
-              home-manager.extraSpecialArgs = {
-                inherit waterfox spicetify-nix;
-                neodots = config.neodots;
-              };
-
-              home-manager.sharedModules = [
-                sops-nix.homeManagerModules.sops
-              ];
-
-              home-manager.users.${config.neodots.username} = {
-                imports = [
-                  ./hosts/nixos/home.nix
-                  catppuccin.homeModules.catppuccin
-                  spicetify-nix.homeManagerModules.spicetify
-                ];
-              };
-
-              home-manager.users.river = {
-                imports = [
-                  ./hosts/nixos/river-home.nix
-                  catppuccin.homeModules.catppuccin
-                ];
-              };
-
-              home-manager.users.guest = {
-                imports = [
-                  ./hosts/nixos/guest-home.nix
-                ];
+              neodots.personal.enable = nixpkgs.lib.mkForce false;
+              neodots.hostname = nixpkgs.lib.mkForce "neodots-ci";
+              neodots.vm = {
+                enable = nixpkgs.lib.mkForce true;
+                platform = nixpkgs.lib.mkForce "qemu";
               };
             }
-          )
-        ];
+          ];
+        };
       };
 
       # ─────────────────────────── Dev shells ───────────────────────────
@@ -265,15 +291,137 @@
 
           result = import ./tests {
             lib = nixpkgs.lib;
-            base = self.nixosConfigurations.${machine.neodots.hostname};
+            base = self.nixosConfigurations.ci;
           };
         in
         {
+          repository-policy =
+            pkgs.runCommand "neodots-repository-policy"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.actionlint
+                  pkgs.shellcheck
+                ];
+              }
+              ''
+                cp -r ${./.} source
+                chmod -R u+w source
+                cd source
+                python3 tests/repository-policy.py
+                actionlint .github/workflows/*.yml
+                shellcheck -s bash tests/check-wayland-migration.sh modules/personal/check-age-key.sh modules/desktop/river/session.sh
+                touch $out
+              '';
+
+          cpp-toolchain =
+            pkgs.runCommand "neodots-cpp-toolchain"
+              {
+                nativeBuildInputs = self.devShells.${machine.system}.cpp.nativeBuildInputs;
+              }
+              ''
+                ${self.devShells.${machine.system}.cpp.shellHook}
+                printf '#include <iostream>\nint main() { std::cout << "toolchain-ok"; }\n' > main.cpp
+                printf 'cmake_minimum_required(VERSION 3.20)\nproject(smoke LANGUAGES CXX)\nadd_executable(smoke main.cpp)\n' > CMakeLists.txt
+                cmake -S . -B build
+                cmake --build build
+                test "$(build/smoke)" = toolchain-ok
+                test -s build/compile_commands.json
+                touch $out
+              '';
+
+          river-session =
+            pkgs.runCommand "neodots-river-session"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.bash
+                ];
+              }
+              ''
+                mkdir -p modules/desktop/river tests
+                cp ${./modules/desktop/river/session.sh} modules/desktop/river/session.sh
+                cp ${./tests/river-session.py} tests/river-session.py
+                python3 tests/river-session.py
+                touch $out
+              '';
+
+          river-quickshell =
+            pkgs.runCommand "neodots-river-quickshell"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.quickshell
+                ];
+              }
+              ''
+                python3 ${./tests/river-quickshell.py} ${pkgs.quickshell}/bin/qs
+                touch $out
+              '';
+
+          dsh-installer =
+            let
+              installerText =
+                builtins.elemAt
+                  (import ./modules/programs/deepseek-harness.nix {
+                    config.home.homeDirectory = "/unused";
+                    pkgs = pkgs // {
+                      writeShellApplication = args: args.text;
+                    };
+                  }).home.packages
+                  1;
+            in
+            pkgs.runCommand "neodots-dsh-installer"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.nodejs_24
+                  pkgs.bash
+                ];
+              }
+              ''
+                python3 ${./tests/check-dsh-installer.py} ${pkgs.writeText "dsh-installer.sh" installerText}
+                touch $out
+              '';
+
+          sops-recovery =
+            pkgs.runCommand "neodots-sops-recovery"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.age
+                  pkgs.sops
+                  (pkgs.writeShellApplication {
+                    name = "check-sops-age-key";
+                    runtimeInputs = [ pkgs.coreutils ];
+                    text = builtins.readFile ./modules/personal/check-age-key.sh;
+                  })
+                  (pkgs.callPackage sops-nix { }).sops-install-secrets
+                ];
+              }
+              ''
+                python3 ${./tests/sops-recovery.py}
+                touch $out
+              '';
+
           config-invariants =
             if result.failed == [ ] then
               pkgs.runCommand "neodots-config-invariants" { } "touch $out"
             else
               throw result.failureMessage;
+
+          river-vm = import ./tests/river-vm.nix {
+            inherit pkgs home-manager;
+          };
+
+          security-persistence-vm = import ./tests/security-persistence-vm.nix {
+            inherit
+              pkgs
+              home-manager
+              sops-nix
+              impermanence
+              ;
+          };
 
           # Exercise actual GUI clients against a headless Wayland compositor.
           # Unlike config evaluation, this launches GTK, Qt, SDL and Electron windows.

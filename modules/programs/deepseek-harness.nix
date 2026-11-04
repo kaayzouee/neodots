@@ -23,36 +23,6 @@
 
 { config, pkgs, ... }:
 let
-  # Every Git source is pinned to an immutable commit, not a moving branch.
-  dshPlugins = [
-    {
-      name = "dsh-plugin-chatgpt-siwc";
-      version = "0.9.7";
-      source = "dsh-plugin-chatgpt-siwc@0.9.7";
-    }
-    {
-      name = "@wenaixi/dsh-ponytail";
-      version = "5.6.2";
-      source = "@wenaixi/dsh-ponytail@5.6.2";
-    }
-    {
-      name = "dsh-ghidra";
-      version = "0.11.4";
-      source = "dsh-ghidra@0.11.4";
-    }
-    {
-      name = "dsh-nix-dev-shell";
-      version = "0.3.0";
-      source = "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56";
-    }
-    # Intentionally excluded: Java LSP 0.1.0 requires DSH < 0.2.0 and is
-    # rejected by our pinned DSH 0.2.1-rc.3. Do not bypass allow-version.
-    {
-      name = "dsh-github-ci";
-      version = "1.0.0";
-      source = "dsh-github-ci@1.0.0";
-    }
-  ];
   installer = pkgs.writeShellApplication {
     name = "neodots-install-dsh-plugins";
     runtimeInputs = [
@@ -75,8 +45,9 @@ let
             const installed = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
             const [name, version, source] = process.argv.slice(3);
             const declared = profile.dependencies?.[name];
+            const expected = source.startsWith("github:") ? source : version;
             process.exit(installed.name === name && installed.version === version
-              && (declared === source || declared === source.replace(/^github:/, "github:")) ? 0 : 1);
+              && declared === expected ? 0 : 1);
           ' "''${DSH_HOME:-$HOME/.dsh}/profiles/web/package.json" "$manifest" "$name" "$version" "$source"; then
             echo "[dsh] $name is pinned and installed"
             return 0
@@ -93,7 +64,9 @@ let
       install_plugin "dsh-plugin-chatgpt-siwc" "0.9.7" "dsh-plugin-chatgpt-siwc@0.9.7"
       install_plugin "@wenaixi/dsh-ponytail" "5.6.2" "@wenaixi/dsh-ponytail@5.6.2"
       install_plugin "dsh-ghidra" "0.11.4" "dsh-ghidra@0.11.4"
-      install_plugin "dsh-nix-dev-shell" "0.3.0" "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56"
+      # Git sources use full immutable commits, never moving branches.
+      install_plugin "dsh-nix-dev-shell" "0.3.0" "github:running-grass/dsh-nix-dev-shell#90d39a724613d151838faac7972e3a06693df56a"
+      # Java LSP 0.1.0 requires DSH < 0.2.0; do not bypass allow-version.
       install_plugin "dsh-github-ci" "1.0.0" "dsh-github-ci@1.0.0"
     '';
   };

@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Neodots - Evaluate configuration and run focused integration checks.
+#
+# Copyright (C) 2026 kaayzouee
+# Author: https://github.com/kaayzouee
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
 name: Evaluate
 
 on:
@@ -38,48 +57,38 @@ jobs:
       - name: Check GNOME/Wayland migration has no X11 leftovers
         run: bash tests/check-wayland-migration.sh
 
-      - name: Provide CI hardware configuration
+      - name: Check source licensing and private-artifact policy
         run: |
-          cat > hardware-configuration.nix <<'EOF'
-          { modulesPath, ... }:
-          {
-            imports = [
-              (modulesPath + "/profiles/qemu-guest.nix")
-            ];
-
-            boot.initrd.availableKernelModules = [
-              "virtio_pci"
-              "virtio_scsi"
-              "ahci"
-              "sd_mod"
-            ];
-
-            fileSystems."/" = {
-              device = "/dev/vda2";
-              fsType = "btrfs";
-            };
-
-            fileSystems."/boot" = {
-              device = "/dev/vda1";
-              fsType = "vfat";
-              options = [ "fmask=0077" "dmask=0077" ];
-            };
-          }
-          EOF
+          python3 tests/license-headers.py
+          python3 tests/repository-policy.py
 
       - name: Check flake outputs
         run: nix flake check --all-systems --no-build
 
       - name: Evaluate NixOS system derivation
-        run: nix eval --raw .#nixosConfigurations.nixos.config.system.build.toplevel.drvPath
+        run: nix eval --raw .#nixosConfigurations.ci.config.system.build.toplevel.drvPath
+
+      - name: Run deterministic security, recovery and desktop regressions
+        run: |
+          nix build --no-link --print-build-logs \
+            .#checks.x86_64-linux.config-invariants \
+            .#checks.x86_64-linux.repository-policy \
+            .#checks.x86_64-linux.sops-recovery \
+            .#checks.x86_64-linux.dsh-installer \
+            .#checks.x86_64-linux.river-session \
+            .#checks.x86_64-linux.river-quickshell \
+            .#checks.x86_64-linux.cpp-toolchain
 
       - name: Run GTK, Qt, SDL and Electron Wayland client smoke tests
         run: nix build .#checks.x86_64-linux.wayland-client-smoke --print-build-logs
 
-      - name: Run GDM/GNOME reboot integration test when KVM is available
+      - name: Run GNOME, River and security/recovery VMs when KVM is available
         run: |
           if [[ -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]]; then
-            nix build .#checks.x86_64-linux.gnome-wayland-vm --print-build-logs
+            nix build --no-link --print-build-logs \
+              .#checks.x86_64-linux.gnome-wayland-vm \
+              .#checks.x86_64-linux.river-vm \
+              .#checks.x86_64-linux.security-persistence-vm
           else
-            echo "::notice::Skipped the GDM/GNOME QEMU integration test because this runner does not expose writable /dev/kvm. The headless Wayland client smoke test still runs."
+            echo "::notice::SKIPPED: GNOME, River and security/persistence QEMU tests require writable /dev/kvm. Deterministic checks and headless Wayland smoke still run; VM coverage is not passed."
           fi

@@ -19,9 +19,20 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 
-# Neodots Installer Plan
+# Cancelled: Neodots Installer Plan (historical)
 
-Tracking issue: #2
+**Cancelled — not an active roadmap or installation guide.** No TUI or graphical
+installer will be implemented. The unchecked proposal below is retained solely
+as historical context; its commands and future-tense promises are not current
+instructions. Issue #2 is historical context, not automatically closed here.
+
+Active requirements were extracted into the [manual setup guide](../README.md),
+[architecture audit](audits/ARCHITECTURE.md), [reproducibility boundaries](REPRODUCIBILITY.md)
+and [SOPS recovery guide](security/SOPS-RECOVERY.md). In particular: preserve
+per-machine hardware, validate persistence before boot, use nonpersonal disposable
+tests and maintain rollback/recovery procedures without an installer.
+
+Historical tracking issue: #2
 
 ## Objective
 

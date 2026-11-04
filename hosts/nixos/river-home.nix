@@ -20,43 +20,8 @@
 
 { lib, pkgs, ... }:
 
-let
-  neodotsQuickshellWatch = pkgs.writeShellScript "neodots-quickshell-watch" ''
-    watch_dir=/home/river/neodots/config/quickshell/neodots
-
-    while true; do
-      # inotifywait exits immediately when the directory is missing. Without
-      # this guard the loop spins and restarts Quickshell several times a
-      # second forever on any install that has no live checkout.
-      if [ ! -d "$watch_dir" ]; then
-        sleep 30
-        continue
-      fi
-
-      ${pkgs.inotify-tools}/bin/inotifywait \
-        --recursive \
-        --exclude '(^|/)[.]git(/|$)' \
-        --event close_write,create,delete,move \
-        --format '%w%f' \
-        "$watch_dir" >/dev/null 2>&1 || {
-          sleep 5
-          continue
-        }
-
-      # Editors commonly emit several filesystem events for one save.
-      sleep 0.15
-
-      systemctl --user reset-failed neodots-quickshell.service || true
-      systemctl --user restart neodots-quickshell.service || true
-    done
-  '';
-in
-
 {
   home.stateVersion = "26.11";
-
-  home.username = "river";
-  home.homeDirectory = "/home/river";
 
   programs.home-manager.enable = true;
 
@@ -80,8 +45,7 @@ in
 
   imports = [
     ../../modules/programs/waterfox.nix
-    ../../modules/programs/mako.nix
-    ../../modules/theming/wallpaper-swaybg.nix
+    ../../modules/desktop/river/home.nix
     ../../modules/programs/tmux.nix
     ../../modules/programs/nano.nix
     ../../modules/programs/alacritty.nix
@@ -129,22 +93,7 @@ in
   home.packages = with pkgs; [
     nixd
     alacritty
-    quickshell
-    fuzzel
-    libnotify
-    wl-clipboard
-    swaylock
-    thunar
-    wlr-randr
-    wtype
   ];
-
-  # Install the Quickshell project into the user's config tree. Recursive
-  # linking keeps QML files declarative while preserving the repo layout.
-  home.file.".config/quickshell/neodots" = {
-    source = ../../config/quickshell/neodots;
-    recursive = true;
-  };
 
   # Waterfox's own chrome hosts the traffic lights. Home Manager keeps the
   # stylesheet in the repo-managed config tree; activation merges it into each
@@ -231,67 +180,5 @@ in
     print("Neodots Waterfox chrome installed in " + str(installed) + " profile(s).")
     PY
   '';
-
-  # Keep Quickshell under user-systemd supervision so it can restart without
-  # affecting KWM or River when the shell process exits.
-  systemd.user.services.neodots-quickshell = {
-    Unit = {
-      Description = "Neodots Quickshell shell";
-      # Never suppress recovery because of repeated QML startup failures.
-      StartLimitIntervalSec = "0s";
-    };
-
-    Service = {
-      ExecStart = "${pkgs.quickshell}/bin/qs -c neodots";
-      Restart = "on-failure";
-      RestartSec = "1s";
-    };
-  };
-
-  # Reload Quickshell automatically whenever the live repository is saved.
-  systemd.user.services.neodots-quickshell-watch = {
-    Unit = {
-      Description = "Watch Neodots Quickshell sources";
-      ConditionPathExists = "/home/river/neodots/config/quickshell/neodots";
-      After = [ "neodots-quickshell.service" ];
-      StartLimitIntervalSec = "0s";
-    };
-
-    Service = {
-      ExecStart = "${neodotsQuickshellWatch}";
-      Restart = "always";
-      RestartSec = "1s";
-    };
-  };
-
-  # River 0.4+ starts the configured window manager after the Wayland socket
-  # is ready. Import the live Wayland/session variables into the user systemd
-  # manager before starting the supervised Quickshell service.
-  home.file.".config/river/init" = {
-    text = ''
-      exec sh -c '
-        # Set every connected River output to 150% before shell geometry is read.
-        ${pkgs.wlr-randr}/bin/wlr-randr 2>/dev/null |
-          while IFS= read -r output_line; do
-            case "$output_line" in
-              ""|[[:space:]]*) continue ;;
-            esac
-
-            output_name=''${output_line%% *}
-            [ -n "$output_name" ] || continue
-            ${pkgs.wlr-randr}/bin/wlr-randr --output "$output_name" --scale 1.5 || true
-          done
-
-        systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE
-        systemctl --user restart neodots-quickshell-watch.service
-        systemctl --user reset-failed neodots-quickshell.service
-        systemctl --user restart neodots-quickshell.service
-        exec kwm
-      '
-    '';
-    executable = true;
-  };
-
-  home.file.".config/kwm/config.zon".source = ../../config/kwm/config.zon;
 
 }

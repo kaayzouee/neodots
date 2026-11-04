@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 This document is the persistent design memory and implementation record for the language toolchains that Neodots exposes through its flake, the direnv-based activation of those shells, and the VS Code configuration that consumes them.
 
-Current state: five language devShells (`cpp`, `qt`, `rust`, `python`, `asm`), matching flake templates, direnv + nix-direnv activation, and the full VS Code extension set for those languages are all implemented and verified end-to-end on the reference machine. The C++ pipeline (`direnv` → `clang` → `cmake` → `compile_commands.json` → `clangd`) is verified with a working binary. Remaining work is limited to optional polish: additional language extensions, marketplace extensions for tools not packaged in nixpkgs, and a documented procedure for removing the temporary solaar workaround once its upstream PR lands.
+Historical reference-machine record: five language devShells (`cpp`, `qt`, `rust`, `python`, `asm`), matching flake templates, direnv + nix-direnv activation, and the full VS Code extension set for those languages are all implemented and verified end-to-end on the reference machine. The C++ pipeline (`direnv` → `clang` → `cmake` → `compile_commands.json` → `clangd`) is verified with a working binary. For current verification, limitations and recovery requirements see [REPRODUCIBILITY.md](REPRODUCIBILITY.md) and [FINAL-REPORT.md](audits/FINAL-REPORT.md). The Solaar workaround has already been removed.
 
 ## The problem this solves
 
@@ -84,14 +84,14 @@ If clang is bumped in `flake.nix`, no project needs a commit. `direnv reload` pi
 │    └── asm/{.envrc}
 │
 └── hosts/nixos/
-     ├── home.nix          ← programs.direnv, xfconf Ctrl+Alt+T
+     ├── home.nix          ← programs.direnv, GNOME dconf Ctrl+Alt+T
      └── river-home.nix    ← programs.direnv, programs.vscode extensions
 ```
 
-Every `.envrc` contains exactly one line:
+Each template now accepts an explicit `NEODOTS_FLAKE` override (including an immutable flake reference), with `~/neodots` retained as the convenience default. Set it before direnv activation when the checkout lives elsewhere. Apart from its license header, the template contains:
 
 ```
-use flake ~/neodots#<lang>
+use flake "${NEODOTS_FLAKE:-$HOME/neodots}#<lang>"
 ```
 
 Every `.clangd` contains exactly:
@@ -401,79 +401,17 @@ The fix is two-part:
 
    `alternate_on` is true for any full-screen application (vim, nano, less, fzf), so the same rule works for all of them without maintaining an editor whitelist.
 
-### Ctrl+Alt+T on XFCE
+### Historical desktop and Solaar workarounds
 
-`desktop-xfce.nix` excludes `xfce4-terminal` from the XFCE package set, but the default Ctrl+Alt+T shortcut still tries to launch it via `exo-open`. The binding is redirected to `alacritty` in `home.nix`:
+XFCE/LightDM shortcuts and the Solaar PR #574929 overlay described by the
+original implementation are historical. The current desktop is GNOME/GDM;
+shortcuts use Home Manager dconf settings. There is no `solaar-pr` flake input
+or temporary Solaar overlay to remove. Do not run the old lock-update/switch
+recipe: current toolchains follow the committed lock, not that historical PR.
 
-```nix
-xfconf.settings."xfce4-keyboard-shortcuts" = {
-  "commands/custom/override" = true;
-  "commands/custom/<Primary><Alt>t" = "alacritty";
-};
-```
-
-Note: `Ctrl+Alt+T` is an XFCE shortcut, and the primary desktop session on the reference machine is River (Wayland). This fix applies only to XFCE sessions started from LightDM. On River, terminals are launched from the dock, fuzzel, or a direct `alacritty` invocation.
-
-## Temporary workarounds
-
-### solaar test failure (PR #574929)
-
-Building the system on nixpkgs `26f4107e47e3ad0ffd0db220469ba83b6f6d96e8` fails because Solaar 1.1.19's test suite spawns a D-Bus notification without a session bus or `/etc/machine-id`. The failure cascades through `hwdb.bin` → `udev-rules` → `etc` and blocks the whole `nixos-system` closure.
-
-Solaar 1.1.20 mocks libnotify in its tests, which resolves this. The backport to `nixos-26.05` is tracked in PR [NixOS/nixpkgs#574929](https://github.com/NixOS/nixpkgs/pull/574929).
-
-Until the PR is merged and nixpkgs is updated, the flake pins a second nixpkgs input at the PR's head and overlays `solaar` from it:
-
-**`flake.nix`:**
-
-```nix
-inputs.solaar-pr.url = "github:NixOS/nixpkgs/pull/574929/head";
-
-outputs =
-  { …, solaar-pr, }:
-  let machine = import ./hosts/nixos/machine.nix; in
-  {
-    nixosConfigurations.${machine.neodots.hostname} = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit waterfox solaar-pr; };
-      # …
-    };
-  };
-```
-
-**`hosts/nixos/default.nix`:**
-
-```nix
-{ config, pkgs, waterfox, solaar-pr, ... }:
-
-let
-  solaarFromPr = solaar-pr.legacyPackages.${pkgs.stdenv.hostPlatform.system}.solaar;
-in
-{
-  nixpkgs.overlays = [
-    (final: prev: { solaar = solaarFromPr; })
-  ];
-  # …
-}
-```
-
-### Removal procedure (run when PR #574929 merges)
-
-1. Delete `solaar-pr.url = "github:NixOS/nixpkgs/pull/574929/head";` from `inputs`.
-2. Remove `solaar-pr,` from the `outputs` argument list.
-3. In `specialArgs`, change `inherit waterfox solaar-pr;` to `inherit waterfox;`.
-4. In `hosts/nixos/default.nix`, remove:
-   - `solaar-pr` from the module's destructured argument list;
-   - the entire `let solaarFromPr = …; in` block;
-   - the entire `nixpkgs.overlays = [ … ];` block.
-5. Re-lock and rebuild:
-
-   ```
-   nix flake lock --update-input nixpkgs
-   nix flake check --no-build
-   sudo nixos-rebuild switch --flake .#nixos
-   ```
-
-The overlay does not change Solaar's runtime behavior; it only skips the sandbox test failure. Removing it has no effect on the installed binary beyond which nixpkgs revision supplies the derivation.
+The useful historical lesson is that a source-pinned workaround belongs next
+to its affected feature, with a removal condition and verification; it is not
+a reason to retain an obsolete second Nixpkgs input.
 
 ## Decision log
 
@@ -489,18 +427,18 @@ The overlay does not change Solaar's runtime behavior; it only skips the sandbox
 - Marketplace extensions and nixpkgs extensions are combined in a single `profiles.default.extensions` list. The marketplace list remains the escape hatch for tools not packaged in nixpkgs.
 - The `13xforever` assembly extension is pulled out of the `with pkgs.vscode-extensions; …` block into an explicit `[ pkgs.vscode-extensions."13xforever"."language-x86-64-assembly" ]` list because publishers starting with a digit are not valid identifiers and cannot be resolved by `with`.
 - `pkgs.qt6.full` is replaced by `qt6.env "name" [modules…]`. The `env` form is the supported replacement in nixpkgs and produces a merged prefix suitable for `mkShell`.
-- The solaar workaround is temporary. Its removal is documented above and should be executed when PR #574929 merges into `nixos-26.05`. The overlay is intentionally scoped to `hosts/nixos/default.nix` so it is easy to delete.
+- Historical: the Solaar workaround was feature-scoped and temporary. It is absent from the current flake; no removal action remains.
 
 ## Known limitations
 
 These are deferred concerns, not defects:
 
 - **No automatic `cmake -B build` invocation.** clangd has no compilation database until the developer runs CMake once. This is a property of CMake, not of the workflow; the same is true on any OS. A future `direnv` `shellHook` could attempt `cmake -B build -S .` automatically when `build/` does not exist, but this is fragile for projects using other build systems and is not planned.
-- **No pinned Python interpreter packages in the shell.** The `python` devShell is intentionally generic. Projects needing reproducible dependencies must use a `pyproject.toml` + `venv` (standard Python practice) or add a `python.withPackages` shell for the specific project.
+- **No pinned Python interpreter packages in the shell.** The `python` devShell is intentionally generic. A `pyproject.toml` and `venv` alone do not pin dependencies. Use a reviewed dependency lock with exact versions/hashes, or a project-specific Nix package closure, for reproducible project dependencies.
 - **No pre-installed `pyright` in the shell.** `pylance` (the VS Code extension) bundles its own analysis engine, so no external pyright is needed for editor integration. CLI usage requires installing `pyright` in the shell or running `npx pyright`.
 - **The Qt extension (`theqtcompany.qt-cpp-pack`) is not installed.** Qt's official VS Code extension is not packaged in nixpkgs. `clangd` + the `qt` devShell provides equivalent functionality for the C++ side; Designer integration is not available from the editor. Projects that need Designer should launch `designer` from the shell or use `qtcreator`.
 - **`ms-vscode.cpptools-extension-pack` and `vscode-clangd` coexist.** Their IntelliSense engines can conflict if both are active. Setting `C_Cpp.intelliSenseEngine` to `"disabled"` per-workspace is the recommended fix; the current config leaves this as a per-project choice.
-- **No flake-check integration test.** `nix flake check` verifies that each shell evaluates and each template path exists, but does not build a project end-to-end. A future addition could add a `checks.<system>.cpp-build` derivation that runs a hello-world CMake project in the `cpp` shell and asserts the binary runs. This is deferred because it adds build time to every `nix flake check` invocation.
+- **Focused integration coverage.** `checks.x86_64-linux.cpp-toolchain` compiles/runs a CMake C++ project and checks its compilation database using the actual cpp shell packages/hook. Other language shells are evaluated and version-smoke-tested during this audit, not full application/editor integration tests.
 - **`set mouse` in nano is a shell-agnostic change.** It applies to nano in every terminal (Alacritty, kitty, VS Code integrated terminal), not only under tmux. This is intentional; nano's mouse-mode default is off for historical reasons, and enabling it does not degrade keyboard use.
 
 ## References

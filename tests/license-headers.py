@@ -52,7 +52,7 @@ NOTICE = [
 ]
 LINE = {
     "nix": "#", "sh": "#", "yml": "#", "yaml": "#", "toml": "#", "py": "#",
-    "ini": "#", "gitignore": "#", "qmldir": "#",
+    "ini": "#", "gitignore": "#", "qmldir": "#", "envrc": "#", "clangd": "#",
     "qml": "//", "js": "//", "jsonc": "//", "zon": "//",
 }
 

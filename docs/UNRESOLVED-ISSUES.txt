@@ -19,8 +19,21 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
-UNRESOLVED ISSUES - feat/river-wayland audit
+HISTORICAL ISSUES - feat/river-wayland audit
 =============================================
+
+This is the earlier audit record, not a current diagnosis or active permission
+policy. Current evidence and remaining work live in docs/audits/FINAL-REPORT.md
+and docs/security/SECURITY-AUDIT.md. Do not execute historical recovery commands
+without validating the actual storage topology and obtaining owner approval.
+
+Superseded: DNS is now static plaintext (not Stubby); GDM/GNOME replaced LightDM/
+XFCE; tracked hardware is Btrfs, explicitly selected separately from CI fixtures;
+River admin/libvirtd permissions are intentional and configurable, not candidates
+for automatic removal; Quickshell uses a session-bound immutable/default or
+explicit live-source mode. Recovery/desktop VM coverage is now present; see the
+current report for actual run results. Historical root/ESP failure, license
+provenance and full root-reset readiness remain unconfirmed where stated.
 
 Everything below was found during the audit and is NOT fixed by the audit
 patch. Items are grouped by what is needed to close them. Nothing in the audit

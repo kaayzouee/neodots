@@ -31,8 +31,13 @@
       {
         assertion =
           config.fileSystems ? ${config.neodots.persistence.path}
-          && config.fileSystems.${config.neodots.persistence.path}.neededForBoot;
-        message = "[persistence] neodots.persistence.enable requires fileSystems.\"${config.neodots.persistence.path}\" with neededForBoot = true.";
+          && config.fileSystems.${config.neodots.persistence.path}.neededForBoot
+          && !(lib.elem config.fileSystems.${config.neodots.persistence.path}.fsType [
+            "tmpfs"
+            "ramfs"
+            "auto"
+          ]);
+        message = "[persistence] neodots.persistence.enable requires an explicit nonvolatile fileSystems.\"${config.neodots.persistence.path}\" with neededForBoot = true.";
       }
     ];
 
@@ -43,12 +48,16 @@
         "/etc/nixos"
         "/var/lib/nixos"
         "/var/log"
-      ]
-      ++ lib.optional config.neodots.personal.enable "/var/lib/sops-nix";
+      ];
 
       users.${config.neodots.username}.directories = [
         "Pictures"
-      ];
+      ]
+      ++ lib.optional config.neodots.personal.enable {
+        # This is the Home Manager key, not the unrelated system SOPS state.
+        directory = ".config/sops/age";
+        mode = "0700";
+      };
     };
   };
 }
