@@ -44,7 +44,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "kaayzouee";
     repo = "deepseek-harness";
     rev = "5679627ac8f9c5a0c695416c0e1cbf1ea937941d";
-    hash = lib.fakeHash;
+    hash = "sha256-iTYxHbYZ6aKLUrKGGdPF5keez78FMx+rN9pSpxlUlvI=";
 
     # Capture the commit hash at fetch time to avoid git build dependency
     leaveDotGit = true;
