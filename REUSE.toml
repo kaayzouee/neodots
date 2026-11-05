@@ -38,6 +38,12 @@ SPDX-FileCopyrightText = "2026 kaayzouee"
 SPDX-License-Identifier = "GPL-3.0-only"
 
 [[annotations]]
+path = "packages/deepseek-harness/expose-internals-profile-resolution.patch"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "nixpkgs contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
 path = "config/quickshell/neodots/assets/icons/mactahoe/**.svg"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "MacTahoe icon theme contributors (https://github.com/vinceliuice/MacTahoe-icon-theme)"
