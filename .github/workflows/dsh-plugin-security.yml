@@ -82,7 +82,10 @@ jobs:
           mkdir -p /tmp/plugin-audit
           cd /tmp/plugin-audit
           printf '{"private":true,"name":"dsh-audit","version":"1.0.0"}\n' > package.json
-          npm install --package-lock-only --ignore-scripts --no-audit --save-exact --omit=dev "$SPEC"
+          # DSH's web profile uses autoInstallPeers: false: peer packages come
+          # from the installed DSH host, not from this plugin's pnpm install.
+          # npm's default peer resolution audits a different dependency graph.
+          npm install --package-lock-only --ignore-scripts --no-audit --save-exact --omit=dev --legacy-peer-deps "$SPEC"
           npm audit --audit-level=high --omit=dev
       - name: Retrieve exact Git commit without running its code
         if: matrix.kind == 'github'
@@ -112,7 +115,8 @@ jobs:
           set -euo pipefail
           cd /tmp/plugin-audit
           # Resolve a fresh declaration graph, not the user's installed profile lock.
-          # Keep optional/peer runtime dependencies; never execute lifecycle scripts.
+          # Keep optional runtime dependencies; DSH supplies peer packages.
+          # Match the profile's autoInstallPeers: false; never run scripts.
           node - <<'NODE'
           const fs = require('fs');
           const p = JSON.parse(fs.readFileSync('package.json'));
@@ -120,7 +124,7 @@ jobs:
           delete p.devDependencies;
           fs.writeFileSync('package.json', JSON.stringify(p));
           NODE
-          npm install --package-lock-only --ignore-scripts --no-audit --omit=dev
+          npm install --package-lock-only --ignore-scripts --no-audit --omit=dev --legacy-peer-deps
           npm audit --audit-level=high --omit=dev
       - name: Check source against high-risk patterns
         if: matrix.kind == 'github'
@@ -133,6 +137,11 @@ jobs:
     name: DSH compatibility declarations
     runs-on: ubuntu-24.04
     steps:
+      - name: Report unresolved upstream DSH host Zod advisory
+        run: |
+          echo "::warning title=DSH host Zod advisory::DSH 0.2.1-rc.3 host packages pin Zod 4.4.3 (GHSA-mrhx-c7xc-m3w5; fixed in 4.6.6). Plugin audits do not cover host-supplied peers. Upgrade the host when upstream releases patched dependencies."
+          echo "DSH host vulnerability is not cleared by the plugin-only npm audits." >> "$GITHUB_STEP_SUMMARY"
+          echo "Track upstream: https://github.com/deepseek-ai/deepseek-harness/discussions/10847" >> "$GITHUB_STEP_SUMMARY"
       - name: Flag known incompatible Java LSP range
         run: |
           echo "::warning title=Java LSP compatibility::Pinned @dsh-lsp-packs/dsh-lsp-java@0.1.0 declares DSH <0.2.0, while nixpkgs provides 0.2.1-rc.3. This plugin is not verified compatible."
