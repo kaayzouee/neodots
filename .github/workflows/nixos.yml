@@ -56,3 +56,6 @@ jobs:
 
       - name: Build NixOS system
         run: nix build .#nixosConfigurations.ci.config.system.build.toplevel --print-build-logs
+
+      - name: Smoke-test locally packaged DSH web profile
+        run: nix build .#checks.x86_64-linux.dsh-local-web-boot --print-build-logs
