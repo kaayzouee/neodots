@@ -122,6 +122,15 @@ stdenv.mkDerivation (finalAttrs: {
   installCheckPhase = ''
     export HOME=$TMPDIR
     $out/bin/dsh --version
+
+    # Reject stale Zod copies in the installed pnpm dependency closure.
+    node - "$out/libexec/dsh/node_modules/.pnpm" <<'NODE'
+    const fs = require('node:fs');
+    const names = fs.readdirSync(process.argv[2]).filter(name => /^zod@/.test(name));
+    if (names.length !== 1 || names[0] !== 'zod@4.6.7') {
+      throw new Error('expected only patched zod@4.6.7; found: ' + names.join(', '));
+    }
+    NODE
   '';
 
   passthru = {
