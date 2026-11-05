@@ -79,7 +79,10 @@ pkgs.testers.runNixOSTest {
       };
       serviceConfig = {
         ExecStart = "${pkgs.callPackage ../packages/river { }}/bin/river";
-        KillMode = "control-group";
+        # This fixture must not kill River's init cleanup script alongside
+        # the compositor; production River is launched by the display manager.
+        # Any leaked KWM/shell/client processes fail the shutdown assertions.
+        KillMode = "process";
         TimeoutStopSec = 15;
       };
     };
@@ -146,10 +149,9 @@ pkgs.testers.runNixOSTest {
         machine.succeed("printf '%s\\n' river-test-password | pamtester swaylock ci authenticate")
 
     with subtest("compositor shutdown stops the shell despite a lingering user manager"):
-        # Stopping the entire service sends TERM to every process in the
-        # control group, including River's init cleanup script. Signal only
-        # River itself so the real compositor-exit path can run its trap.
-        machine.succeed(user("systemctl --user kill --kill-whom=main --signal=TERM river-ci.service"))
+        # Stop the compositor but leave its init helper alive to run the
+        # real EXIT trap. A lingering user manager must not keep the session.
+        machine.succeed(user("systemctl --user stop river-ci.service"))
         machine.wait_until_succeeds(user("! systemctl --user is-active --quiet river-ci.service"), timeout=30)
         machine.wait_until_succeeds(user("! systemctl --user is-active --quiet neodots-river-session.target"), timeout=30)
         machine.wait_until_succeeds(user("! systemctl --user is-active --quiet neodots-quickshell.service"), timeout=30)
