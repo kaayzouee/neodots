@@ -79,9 +79,7 @@ pkgs.testers.runNixOSTest {
       };
       serviceConfig = {
         ExecStart = "${pkgs.callPackage ../packages/river { }}/bin/river";
-        # This fixture must not kill River's init cleanup script alongside
-        # the compositor; production River is launched by the display manager.
-        # Any leaked KWM/shell/client processes fail the shutdown assertions.
+        # Preserve River's init helper so its exit trap can stop the session.
         KillMode = "process";
         TimeoutStopSec = 15;
       };
@@ -125,6 +123,8 @@ pkgs.testers.runNixOSTest {
         # A stable process alone is insufficient: require QML to load both panels.
         machine.wait_until_succeeds(user("journalctl --user -u neodots-quickshell.service --no-pager | grep 'Configuration Loaded'"), timeout=90)
         kwm_pid = machine.succeed("pgrep -u ci -x kwm").strip()
+        init_pid = machine.succeed("pgrep -u ci -f '[n]eodots-river-session'").strip()
+        assert init_pid.isdecimal(), init_pid
         shell_pid = pid("neodots-quickshell.service")
         assert int(shell_pid) > 0
 
@@ -149,10 +149,8 @@ pkgs.testers.runNixOSTest {
         machine.succeed("printf '%s\\n' river-test-password | pamtester swaylock ci authenticate")
 
     with subtest("compositor shutdown stops the shell despite a lingering user manager"):
-        # Stop the compositor but leave its init helper alive to run the
-        # real EXIT trap. A lingering user manager must not keep the session.
         machine.succeed(user("systemctl --user stop river-ci.service"))
-        machine.wait_until_succeeds(user("! systemctl --user is-active --quiet river-ci.service"), timeout=30)
+        machine.wait_until_succeeds("test ! -e /proc/" + init_pid, timeout=30)
         machine.wait_until_succeeds(user("! systemctl --user is-active --quiet neodots-river-session.target"), timeout=30)
         machine.wait_until_succeeds(user("! systemctl --user is-active --quiet neodots-quickshell.service"), timeout=30)
         machine.wait_until_succeeds(user("! systemctl --user is-active --quiet river-ci-client.service"), timeout=30)
