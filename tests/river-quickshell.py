@@ -38,8 +38,17 @@ with tempfile.TemporaryDirectory(prefix="river-quickshell-test-") as temporary:
     qml = source / "shell.qml"
 
     def save(marker):
+        # Component.onCompleted runs before Quickshell installs its file watcher.
+        # Emit readiness from the event loop after initial setup instead, so
+        # rewriting the file cannot race the watch registration.
         qml.write_text('import QtQuick\nimport Quickshell\nShellRoot {\n'
-                       f'  Component.onCompleted: console.log("{marker}")\n' + '}\n')
+                       '  Timer {\n'
+                       '    interval: 100\n'
+                       '    running: true\n'
+                       '    repeat: false\n'
+                       f'    onTriggered: console.log("{marker}")\n'
+                       '  }\n'
+                       '}\n')
 
     save("NEODOTS_RELOAD_A")
     env = os.environ | {
@@ -47,6 +56,7 @@ with tempfile.TemporaryDirectory(prefix="river-quickshell-test-") as temporary:
         "XDG_CONFIG_HOME": str(work / "config"), "XDG_CACHE_HOME": str(work / "cache"),
         "XDG_STATE_HOME": str(work / "state"), "QT_QPA_PLATFORM": "offscreen",
     }
+    env.pop("QS_DISABLE_FILE_WATCHER", None)
     env.pop("WAYLAND_DISPLAY", None)
     env.pop("DISPLAY", None)
     process = subprocess.Popen([sys.argv[1], "--no-color", "-p", str(source)], env=env,
