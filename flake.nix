@@ -281,11 +281,13 @@
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
 
       # Explicit opt-in: this QEMU test is intentionally outside default checks.
-      packages.${machine.system}.dns-qemu = import ./tests/dns-qemu.nix {
-        pkgs = nixpkgs.legacyPackages.${machine.system};
+      packages.${machine.system} = {
+        dns-qemu = import ./tests/dns-qemu.nix {
+          pkgs = nixpkgs.legacyPackages.${machine.system};
+        };
+        deepseek-harness =
+          nixpkgs.legacyPackages.${machine.system}.callPackage ./packages/deepseek-harness { };
       };
-      packages.${machine.system}.deepseek-harness =
-        nixpkgs.legacyPackages.${machine.system}.callPackage ./packages/deepseek-harness { };
 
       # ─────────────────────────── Checks ───────────────────────────────
       checks.${machine.system} =
