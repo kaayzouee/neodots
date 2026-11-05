@@ -20,10 +20,16 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 # DeepSeek Harness + ChatGPT SIWC
 
-The primary Home Manager user receives `pkgs.deepseek-harness` from the
-already-pinned `nixpkgs` flake input. The package is currently DSH
-`0.2.1-rc.3` at the locked nixpkgs revision. Neither `river` nor
-`guest` receives the package or the SIWC plugin.
+The primary Home Manager user receives the locally built DSH package from
+[`packages/deepseek-harness/default.nix`](../packages/deepseek-harness/default.nix),
+rather than `pkgs.deepseek-harness`. The recipe pins the exact security-patched
+[`kaayzouee/deepseek-harness`](https://github.com/kaayzouee/deepseek-harness)
+commit `5679627ac8f9c5a0c695416c0e1cbf1ea937941d` and uses the
+same Node 24/pnpm 11 build and loader patch as the referenced nixpkgs package.
+Its local package label is `0.2.2-rc.1-zod.1`; the fork has **not yet
+published** this as an upstream/npm release. CI must verify both fixed source
+and pnpm dependency hashes before this package is deployed. Neither `river`
+nor `guest` receives DSH or the SIWC plugin.
 
 The `neodots-dsh-plugins` user service provisions five compatible pinned DSH plugins
 into the `web` profile when their installed name/version or declared source differs.
@@ -46,9 +52,10 @@ flow. Do not store ChatGPT tokens or DSH profile state in Git.
 
 ## Reproducibility boundary
 
-- **Nix package:** reproducible, because `flake.lock` pins nixpkgs, the
-  DSH source and its pnpm dependency hashes are defined by the nixpkgs
-  derivation.
+- **Nix package:** reproducible after CI validates the fixed hashes in the
+  local derivation. The source is pinned by full fork commit, and the build's
+  `fetchPnpmDeps` output must also have a verified immutable hash; nixpkgs
+  supplies only the build tools, not the DSH package definition.
 - **SIWC version:** exactly pinned to `0.9.7`, with a startup check; it
   will not silently switch to npm's `latest` tag.
 - **SIWC dependency graph:** **not yet fully reproducible**. The DSH plugin
@@ -63,6 +70,14 @@ flow. Do not store ChatGPT tokens or DSH profile state in Git.
 The plugin itself permits independent/background calls by default. Review
 its settings, restrict authorization as appropriate, and never share a DSH
 profile containing personal ChatGPT credentials with other users.
+
+The fork security patch updates DSH's own Zod declarations and frozen pnpm
+lockfile to patched `4.6.7` (see
+[DSH fork PR #1](https://github.com/kaayzouee/deepseek-harness/pull/1)).
+This is a separate issue from the plugin-only security workflow: use
+`nix build .#deepseek-harness` and `nix build .#checks.x86_64-linux.dsh-local-web-boot`
+to test the real packaged host. The upstream release tag and npm publication
+must follow successful build and release-family verification.
 
 ## Pinned plugin inventory
 
