@@ -286,7 +286,8 @@
           pkgs = nixpkgs.legacyPackages.${machine.system};
         };
         deepseek-harness =
-          nixpkgs.legacyPackages.${machine.system}.callPackage ./packages/deepseek-harness { };
+          nixpkgs.legacyPackages.${machine.system}.callPackage ./packages/deepseek-harness
+            { };
       };
 
       # ─────────────────────────── Checks ───────────────────────────────
