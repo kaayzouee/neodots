@@ -82,9 +82,7 @@ jobs:
           mkdir -p /tmp/plugin-audit
           cd /tmp/plugin-audit
           printf '{"private":true,"name":"dsh-audit","version":"1.0.0"}\n' > package.json
-          # DSH's web profile uses autoInstallPeers: false: peer packages come
-          # from the installed DSH host, not from this plugin's pnpm install.
-          # npm's default peer resolution audits a different dependency graph.
+          # Match DSH's autoInstallPeers: false: peers are supplied by the host.
           npm install --package-lock-only --ignore-scripts --no-audit --save-exact --omit=dev --legacy-peer-deps "$SPEC"
           npm audit --audit-level=high --omit=dev
       - name: Retrieve exact Git commit without running its code
@@ -114,9 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           cd /tmp/plugin-audit
-          # Resolve a fresh declaration graph, not the user's installed profile lock.
-          # Keep optional runtime dependencies; DSH supplies peer packages.
-          # Match the profile's autoInstallPeers: false; never run scripts.
+          # Resolve fresh dependencies without auto-installing host-provided peers.
           node - <<'NODE'
           const fs = require('fs');
           const p = JSON.parse(fs.readFileSync('package.json'));
