@@ -38,16 +38,9 @@ with tempfile.TemporaryDirectory(prefix="river-quickshell-test-") as temporary:
     qml = source / "shell.qml"
 
     def save(marker):
-        # Component.onCompleted runs before Quickshell installs its file watcher.
-        # Emit readiness from the event loop after initial setup instead, so
-        # rewriting the file cannot race the watch registration.
+        # Qt.callLater runs after Quickshell registers its file watcher.
         qml.write_text('import QtQuick\nimport Quickshell\nShellRoot {\n'
-                       '  Timer {\n'
-                       '    interval: 100\n'
-                       '    running: true\n'
-                       '    repeat: false\n'
-                       f'    onTriggered: console.log("{marker}")\n'
-                       '  }\n'
+                       f'  Component.onCompleted: Qt.callLater(function() {{ console.log("{marker}") }})\n'
                        '}\n')
 
     save("NEODOTS_RELOAD_A")
