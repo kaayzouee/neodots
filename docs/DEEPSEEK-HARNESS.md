@@ -91,30 +91,40 @@ reproducible Nix derivation.
 
 [The security workflow](../.github/workflows/dsh-plugin-security.yml) runs daily
 at **03:17 UTC** and on manual dispatch or relevant pull requests. Its Actions
-are pinned to reviewed commit IDs. It audits fresh dependency resolutions of the
-six exact pinned package sources with `npm audit --audit-level=high`, excluding
-development dependencies but retaining optional and peer dependency declarations.
+are pinned to reviewed commit IDs. It audits fresh dependency resolutions for
+the six exact pinned plugin sources with `npm audit --audit-level=high`,
+excluding development dependencies but retaining optional runtime dependencies.
+For npm plugins and Git plugin manifests, it uses `--legacy-peer-deps` when
+constructing the temporary npm lockfile. This matches the pinned DSH host's
+`pnpm-workspace.yaml` setting `autoInstallPeers: false`: the profile does not
+automatically install peers, which instead come from the DSH host installation.
 GitHub sources are retrieved by verified commit SHA without invoking their
-lifecycle scripts. This is **not** an audit of the installed profile lockfile;
-resolved peers can differ from those supplied by the running DSH host.
-It reports the known Java compatibility mismatch as a warning, not a failing gate.
-Scheduled jobs require the workflow to be on the repository's default branch;
-GitHub Actions scheduling can be delayed.
+lifecycle scripts.
 
-The 2026-11-03 UTC audit of SIWC's fresh peer graph selected DSH peer packages
-`0.2.1-rc.5` and Zod `4.4.3`. It failed with six high-severity dependency entries
-from [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
-(Zod memory exhaustion; fixed in `4.6.6`), including propagated dependents—not six
-independent vulnerabilities. The other five source audits passed. This does not
-establish the versions or exploitability of the pinned DSH runtime closure.
-Keep the failure visible; review upstream constraints before changing pins or
-adding overrides. Ignoring peer dependencies hides this finding rather than fixing it.
+**Scope limit:** these plugin audits are **not** a scan of the pinned DSH host's
+transitive dependency closure or the actual installed profile lockfile. Nor do
+they establish the versions or exploitability of host-supplied peers. Resolved
+optional dependencies can differ from the running host. Scheduled jobs require
+the workflow to be on the default branch; GitHub Actions scheduling can be delayed.
+The workflow warns about the known Java LSP compatibility mismatch.
+
+On 2026-11-05, npm's *default* automatic peer resolution failed the SIWC
+audit: it auto-installed DSH host peers whose exact Zod `4.4.3` pin is
+affected by [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
+(fixed in `4.6.6`). npm reported six high-severity dependent entries,
+**not six independent vulnerabilities**. Those peers are not installed by
+the profile's plugin installer, so the plugin-only audit no longer
+auto-installs them. **This does not fix the DSH host vulnerability**:
+the locked DSH `0.2.1-rc.3` host may still contain vulnerable Zod, and
+the compatibility job emits a warning until it is patched. Track the
+[upstream DSH dependency report](https://github.com/deepseek-ai/deepseek-harness/discussions/10847).
+An independent audit of the Nix-built host closure is still needed.
 
 This is a dependency-advisory check, **not a full malware/security scan**.
 It does not exercise runtime code, prove absence of credential exfiltration,
-or automatically assess new upstream versions. Findings are visible as
-failed GitHub Actions jobs. Do not enable arbitrary build scripts to fix
-Git-source installation failures without reviewing them.
+or automatically assess new upstream versions. Findings within its
+plugin dependency scope fail GitHub Actions jobs. Do not enable arbitrary
+build scripts to fix Git-source installation failures without reviewing them.
 
 The Java LSP package remains excluded after DSH rejected it at runtime. Its
 exact-version compatibility exemption is intentionally **not** enabled. Other
