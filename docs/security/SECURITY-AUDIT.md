@@ -245,9 +245,11 @@ versions. Neither claim alone constitutes a full host vulnerability audit.
   exactly the full commit pinned in `packages/deepseek-harness/default.nix`,
   checks its locked Zod version and runs `pnpm audit --prod --audit-level high`
   on the fork's own frozen production dependency graph.
-- Status: the new CI gate must pass at the final PR head. The previous
-  SIWC peer-resolution result is historical evidence, not the current plugin
-  CI result. Advisory data can change between workflow runs.
+- Status (2026-11-06): the first host audit failed with 35 advisories (10 high,
+  22 moderate, 3 low), including multiple high-severity undici advisories.
+  This is a genuine dependency-audit failure, not a Zod version-check failure.
+  The previous SIWC peer-resolution result is historical evidence, not the
+  current plugin CI result. Advisory data can change between workflow runs.
 - Residual: vulnerability audits detect known advisories, not arbitrary
   malware, malicious plugin behavior, or exploitability in a deployed profile.
 
