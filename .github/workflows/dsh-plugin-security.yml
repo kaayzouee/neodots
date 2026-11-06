@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Neodots - Daily advisory checks for pinned DSH plugin sources.
+# Neodots - Daily advisory checks for pinned DSH host and plugin sources.
 #
 # Copyright (C) 2026 kaayzouee
 # Author: https://github.com/kaayzouee
@@ -26,6 +26,7 @@ on:
   pull_request:
     paths:
       - "modules/programs/deepseek-harness.nix"
+      - "packages/deepseek-harness/**"
       - ".github/workflows/dsh-plugin-security.yml"
 
 permissions:
@@ -129,15 +130,49 @@ jobs:
           # Heuristic signal only; report executable installation hooks for review.
           grep -R -n -E '"(preinstall|install|postinstall|prepare)"[[:space:]]*:'             "/tmp/source/${{ matrix.subdir }}/package.json" || true
 
+  host-dependency-audit:
+    name: Locked DSH host production dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+      - name: Audit exactly the DSH source pinned by Nix
+        run: |
+          set -euo pipefail
+          rev=$(sed -n 's/^[[:space:]]*rev = "\([0-9a-f]\{40\}\)";/\1/p' packages/deepseek-harness/default.nix)
+          test "${#rev}" -eq 40
+          git clone --filter=blob:none --no-checkout https://github.com/kaayzouee/deepseek-harness.git /tmp/dsh-host
+          git -C /tmp/dsh-host fetch origin "$rev"
+          git -C /tmp/dsh-host checkout --detach "$rev"
+          test "$(git -C /tmp/dsh-host rev-parse HEAD)" = "$rev"
+          cd /tmp/dsh-host
+          corepack enable
+          corepack prepare pnpm@11.28.5 --activate
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+          const text = readFileSync('pnpm-lock.yaml', 'utf8')
+          const matches = [...text.matchAll(/^  ['"]?zod@(\d+\.\d+\.\d+)(?:\([^\n]*)?['"]?:/gm)]
+          const versions = [...new Set(matches.map(m => m[1]))]
+          if (versions.length !== 1 || versions[0] !== '4.6.7') {
+            throw new Error('expected patched Zod 4.6.7 only, got: ' + versions.join(', '))
+          }
+          NODE
+          # This is the host's own frozen pnpm graph, not the six plugin graphs.
+          pnpm audit --prod --audit-level high
+
   compatibility-gate:
     name: DSH compatibility declarations
     runs-on: ubuntu-24.04
     steps:
-      - name: Report unresolved upstream DSH host Zod advisory
+      - name: Report host and plugin security boundaries
         run: |
-          echo "::warning title=DSH host Zod advisory::DSH 0.2.1-rc.3 host packages pin Zod 4.4.3 (GHSA-mrhx-c7xc-m3w5; fixed in 4.6.6). Plugin audits do not cover host-supplied peers. Upgrade the host when upstream releases patched dependencies."
-          echo "DSH host vulnerability is not cleared by the plugin-only npm audits." >> "$GITHUB_STEP_SUMMARY"
-          echo "Track upstream: https://github.com/deepseek-ai/deepseek-harness/discussions/10847" >> "$GITHUB_STEP_SUMMARY"
+          echo "The pinned DSH host lockfile is audited independently by the blocking host-dependency-audit job." >> "$GITHUB_STEP_SUMMARY"
+          echo "Plugin peer dependencies supplied at runtime are not included in isolated plugin audits." >> "$GITHUB_STEP_SUMMARY"
       - name: Flag known incompatible Java LSP range
         run: |
-          echo "::warning title=Java LSP compatibility::Pinned @dsh-lsp-packs/dsh-lsp-java@0.1.0 declares DSH <0.2.0, while nixpkgs provides 0.2.1-rc.3. This plugin is not verified compatible."
+          echo "::warning title=Java LSP compatibility::Pinned @dsh-lsp-packs/dsh-lsp-java@0.1.0 declares DSH <0.2.0, while the locally packaged DSH fork is newer. This plugin is not verified compatible."
