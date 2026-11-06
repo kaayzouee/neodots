@@ -17,16 +17,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-# DSH is pinned by the existing flake.lock; SIWC is installed at an exact npm version.
+# DSH is built from the security-patched fork using the local package recipe.
 # Note: DSH maintains a mutable profile/pnpm lockfile, so plugin transitive
 # dependencies are not yet reproducible at the Nix store level.
 
 { config, pkgs, ... }:
 let
+  dsh = pkgs.callPackage ../../packages/deepseek-harness { };
   installer = pkgs.writeShellApplication {
     name = "neodots-install-dsh-plugins";
     runtimeInputs = [
-      pkgs.deepseek-harness
+      dsh
       pkgs.nodejs_24
       pkgs.pnpm_11
     ];
@@ -73,7 +74,7 @@ let
 in
 {
   home.packages = [
-    pkgs.deepseek-harness
+    dsh
     installer
   ];
   systemd.user.services.neodots-dsh-plugins = {

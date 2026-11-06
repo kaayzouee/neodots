@@ -281,8 +281,13 @@
       formatter.${machine.system} = nixpkgs.legacyPackages.${machine.system}.nixfmt-tree;
 
       # Explicit opt-in: this QEMU test is intentionally outside default checks.
-      packages.${machine.system}.dns-qemu = import ./tests/dns-qemu.nix {
-        pkgs = nixpkgs.legacyPackages.${machine.system};
+      packages.${machine.system} = {
+        dns-qemu = import ./tests/dns-qemu.nix {
+          pkgs = nixpkgs.legacyPackages.${machine.system};
+        };
+        deepseek-harness =
+          nixpkgs.legacyPackages.${machine.system}.callPackage ./packages/deepseek-harness
+            { };
       };
 
       # ─────────────────────────── Checks ───────────────────────────────
@@ -363,6 +368,9 @@
                 python3 ${./tests/river-quickshell.py} ${pkgs.quickshell}/bin/qs
                 touch $out
               '';
+
+          # Exercise the locally built DSH web entrypoint, not nixpkgs' package.
+          dsh-local-web-boot = self.packages.${machine.system}.deepseek-harness.passthru.tests.web-boot;
 
           dsh-installer =
             let

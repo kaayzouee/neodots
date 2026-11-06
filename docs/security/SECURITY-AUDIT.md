@@ -228,31 +228,30 @@ Evidence: [DSH installer](../../modules/programs/deepseek-harness.nix#L20-L70),
   if Nix-level reproducibility is required; do not copy a credential-bearing user
   profile into Git. npm advisory scans are not malware/runtime permission audits.
 
-### SEC-08 — Expanded SIWC peer audit reveals a real advisory, not a live-host verdict
+### SEC-08 — DSH host and plugin advisory audits are independent
 
-**High advisory severity; affected deployed closure unverified; unresolved.**
-Keeping optional/peer declarations and removing `--legacy-peer-deps` exposed
-[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5): Zod can
-exhaust memory validating oversized collections; affected versions are below
-`4.6.6`, with upstream CVSS 3.1 score 7.5.
+**High advisory severity in the previous host; patched Zod in the proposed fork; host-wide audit pending CI.**
+The previously packaged DSH 0.2.1-rc.3 and a fresh SIWC peer
+resolution could select vulnerable Zod 4.4.3
+([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)).
+The proposed local DSH package in PR #13 pins a fork commit whose pnpm lockfile
+resolves Zod 4.6.7. Its Nix installation check also rejects alternate Zod
+versions. Neither claim alone constitutes a full host vulnerability audit.
 
-- Verified isolated fresh graph: SIWC `0.9.7` selected DSH peer packages
-  `0.2.1-rc.5` and Zod `4.4.3`; audit failed with six high dependency entries
-  (one advisory plus propagated dependents). The other five audited sources had
-  zero advisories. The same SIWC source with the old peer-omission flag reported
-  zero—omission hides the finding, not fixes it.
-- Critical scope distinction: the Nix-pinned DSH host is documented as
-  `0.2.1-rc.3`. Fresh npm peers are **not the installed runtime closure**.
-  No personal lockfile or runtime credential/profile was read. Presence of a
-  vulnerable package also does not prove attacker-controlled oversized input
-  reaches that parsing path in a deployed configuration.
-- Minimal next step: independently inspect the non-personal immutable DSH
-  dependency closure and upstream constraints, then review a compatible fixed
-  dependency update. Do not blindly override Zod, upgrade plugins or bypass
-  compatibility gates; npm reported no automatic fix for the tested graph.
-- Status/residual: truthful CI failure retained and documented, not waived with
-  `continue-on-error` or restored peer omission. Runtime exploitability remains
-  unverified; advisory results can change as mutable resolutions/database change.
+- The six isolated plugin advisory checks use `--legacy-peer-deps` to reflect
+  the generated profile's `autoInstallPeers: false`. They do **not** scan the
+  DSH host's production dependency graph or validate host-supplied peers.
+- The blocking `host-dependency-audit` GitHub Actions job independently fetches
+  exactly the full commit pinned in `packages/deepseek-harness/default.nix`,
+  checks its locked Zod version and runs `pnpm audit --prod --audit-level high`
+  on the fork's own frozen production dependency graph.
+- Status (2026-11-06): the first host audit failed with 35 advisories (10 high,
+  22 moderate, 3 low), including multiple high-severity undici advisories.
+  This is a genuine dependency-audit failure, not a Zod version-check failure.
+  The previous SIWC peer-resolution result is historical evidence, not the
+  current plugin CI result. Advisory data can change between workflow runs.
+- Residual: vulnerability audits detect known advisories, not arbitrary
+  malware, malicious plugin behavior, or exploitability in a deployed profile.
 
 ### SEC-09 — Authorized plugins/projects can reach user data and external services
 
