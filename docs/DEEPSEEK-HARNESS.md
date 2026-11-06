@@ -27,8 +27,9 @@ rather than `pkgs.deepseek-harness`. The recipe pins the exact security-patched
 commit `5679627ac8f9c5a0c695416c0e1cbf1ea937941d` and uses the
 same Node 24/pnpm 11 build and loader patch as the referenced nixpkgs package.
 Its local package label is `0.2.2-rc.1-zod.1`; the fork has **not yet
-published** this as an upstream/npm release. CI must verify both fixed source
-and pnpm dependency hashes before this package is deployed. Neither `river`
+published** this as an upstream/npm release. Its Nix source and dependency
+hashes were verified by the neodots NixOS build at this commit, but every
+subsequent fork release commit requires freshly verified hashes. Neither `river`
 nor `guest` receives DSH or the SIWC plugin.
 
 The `neodots-dsh-plugins` user service provisions five compatible pinned DSH plugins
@@ -76,8 +77,16 @@ lockfile to patched `4.6.7` (see
 [DSH fork PR #1](https://github.com/kaayzouee/deepseek-harness/pull/1)).
 This is a separate issue from the plugin-only security workflow: use
 `nix build .#deepseek-harness` and `nix build .#checks.x86_64-linux.dsh-local-web-boot`
-to test the real packaged host. The upstream release tag and npm publication
-must follow successful build and release-family verification.
+to test the real packaged host. After the security fork PR passes its independent CI and merges, run the
+fork's manual **Prepare or tag DSH release** workflow on `master` with
+`operation=prepare` and a new semver. That workflow runs the repository's
+`release:dsh` script to update all family manifests and the lockfile, then
+opens a release-bump PR. Merge it only after its CI and packed-install checks
+pass. Run the same workflow with `operation=tag` on the validated `master`
+commit to create `dsh-v<version>` and a GitHub release. npm publication
+remains a separate protected manual workflow. Finally repin this Nix
+derivation to that exact release commit, update its `version`, recalculate
+both fixed-output hashes, and rerun the neodots CI checks.
 
 ## Pinned plugin inventory
 
@@ -91,8 +100,9 @@ must follow successful build and release-family verification.
 | dsh-github-ci | npm 1.0.0 |
 
 The Java LSP package declares an upstream DSH compatibility range below
-`0.2.0`. It **has not been validated** with the nixpkgs DSH
-`0.2.1-rc.3` package. Its build may require an allowed Git dependency
+`0.2.0`. It **has not been validated** with the locally built, patched
+DSH fork. Its published compatibility declaration does not include this
+release candidate. Its build may require an allowed Git dependency
 prepare script; the installer deliberately uses `--ignore-scripts` and
 does not grant build-script permission automatically. In particular, the
 Java LSP plugin also requires `jdtls` and a compatible DSH LSP base.
@@ -116,24 +126,31 @@ automatically install peers, which instead come from the DSH host installation.
 GitHub sources are retrieved by verified commit SHA without invoking their
 lifecycle scripts.
 
-**Scope limit:** these plugin audits are **not** a scan of the pinned DSH host's
-transitive dependency closure or the actual installed profile lockfile. Nor do
-they establish the versions or exploitability of host-supplied peers. Resolved
-optional dependencies can differ from the running host. Scheduled jobs require
-the workflow to be on the default branch; GitHub Actions scheduling can be delayed.
-The workflow warns about the known Java LSP compatibility mismatch.
+**Scope limit:** the six plugin audits do **not** scan the pinned DSH host
+or the actual installed profile lockfile. The separate, blocking
+`host-dependency-audit` job fetches the exact fork commit in the Nix recipe,
+checks its Zod resolution, and runs `pnpm audit --prod --audit-level high`
+against the host's locked production graph. This is not an audit of the
+Nix-provided Node runtime, profile-local mutable dependencies, or the runtime
+compatibility/exploitability of host-supplied peers. Advisory results depend
+on the registry's current database. Scheduled jobs require this workflow on
+the default branch and may be delayed. The Java LSP incompatibility warning
+is retained.
 
-On 2026-11-05, npm's *default* automatic peer resolution failed the SIWC
-audit: it auto-installed DSH host peers whose exact Zod `4.4.3` pin is
-affected by [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
-(fixed in `4.6.6`). npm reported six high-severity dependent entries,
-**not six independent vulnerabilities**. Those peers are not installed by
-the profile's plugin installer, so the plugin-only audit no longer
-auto-installs them. **This does not fix the DSH host vulnerability**:
-the locked DSH `0.2.1-rc.3` host may still contain vulnerable Zod, and
-the compatibility job emits a warning until it is patched. Track the
-[upstream DSH dependency report](https://github.com/deepseek-ai/deepseek-harness/discussions/10847).
-An independent audit of the Nix-built host closure is still needed.
+On 2026-11-05, npm's *default* automatic SIWC peer resolution selected
+historical DSH peer packages containing vulnerable Zod `4.4.3`, affected
+by [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
+(fixed in `4.6.6`). The six high-severity entries represented one advisory
+and propagated dependency findings, not six independent vulnerabilities.
+The Web profile does not auto-install those peers. The proposed local fork
+instead pins patched Zod `4.6.7`; the Nix install check verifies its pnpm
+store and the host-dependency-audit CI job checks additional locked host
+dependencies. Passing CI would support the patched dependency claim, not
+prove that all runtime inputs are safe or that optional plugins are compatible.
+See [host audit issue #12](https://github.com/kaayzouee/neodots/issues/12)
+for tracking and the
+[upstream DSH dependency report](https://github.com/deepseek-ai/deepseek-harness/discussions/10847)
+for background.
 
 This is a dependency-advisory check, **not a full malware/security scan**.
 It does not exercise runtime code, prove absence of credential exfiltration,
